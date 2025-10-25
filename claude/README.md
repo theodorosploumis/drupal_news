@@ -73,7 +73,11 @@ Features: tabs/split view, run history, metrics, logs
 
 ## Providers
 
-OpenAI, Anthropic, Gemini, Ollama, LMStudio, Qwen, Grok, DeepSeek, OpenRouter
+Built-in: OpenAI, Anthropic, Gemini, Ollama, LMStudio, Qwen, Grok, DeepSeek, OpenRouter
+
+**Generic:** Works with ANY OpenAI-compatible API (OpenRouter, Together AI, Groq, Perplexity, Fireworks, Azure OpenAI, custom endpoints)
+
+See: [Generic Provider Guide](docs/GENERIC_PROVIDER.md)
 
 ## CLI Flags
 

@@ -7,10 +7,24 @@ def generate_summary(
     prompt: str,
     model: str = "qwen2.5-7b-chat",
     temperature: float = 0.2,
+    api_url: str = None,
+    headers: Dict[str, str] = None,
     **kwargs
 ) -> Dict[str, Any]:
     """
     Generate summary using Qwen API via DashScope.
+
+    Args:
+        prompt: Prompt text
+        model: Model name
+        temperature: Temperature setting
+        api_url: Optional custom API URL (may not work with DashScope SDK)
+        headers: Optional custom headers (may not work with DashScope SDK)
+        **kwargs: Additional parameters
+
+    Note:
+        DashScope SDK has limited support for custom URLs/headers.
+        Consider using httpx directly if you need full proxy support.
 
     Returns:
         dict with 'text', 'tokens', and 'model' keys
@@ -26,6 +40,12 @@ def generate_summary(
         raise ValueError("QWEN_API_KEY not set in environment")
 
     dashscope.api_key = api_key
+
+    # Note: DashScope SDK doesn't directly support custom base_url
+    # If you need proxy support, consider using httpx with OpenAI-compatible endpoint
+    if api_url:
+        print(f"Warning: Qwen/DashScope SDK has limited support for custom API URLs")
+        # You might need to use dashscope.base_http_api_url if available
 
     try:
         system_prompt = "You are a technical writer specializing in Drupal documentation."

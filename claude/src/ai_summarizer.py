@@ -54,21 +54,27 @@ def load_prompt_template(prompt_file: str = None) -> str:
     return SUMMARIZER_PROMPT_TEMPLATE
 
 
-def get_provider_client(provider_name: str):
+def get_provider_client(provider_name: str, client_name: str = None):
     """
     Dynamically load provider client module.
 
     Args:
         provider_name: Provider name (e.g., 'openai', 'anthropic')
+        client_name: Optional client name from config (e.g., 'generic_client')
 
     Returns:
         Provider client module
     """
     try:
-        module = importlib.import_module(f"utils.providers.{provider_name}_client")
+        # Use client_name if provided, otherwise use provider_name
+        module_name = client_name if client_name else f"{provider_name}_client"
+        # Remove _client suffix if already present
+        if not module_name.endswith('_client'):
+            module_name = f"{module_name}_client"
+        module = importlib.import_module(f"utils.providers.{module_name}")
         return module
     except ImportError as e:
-        raise ImportError(f"Provider '{provider_name}' not found: {e}")
+        raise ImportError(f"Provider '{provider_name}' (client: {client_name or provider_name}) not found: {e}")
 
 
 def summarize(
@@ -79,7 +85,8 @@ def summarize(
     timeframe_days: int,
     timezone: str,
     max_items: int = 200,
-    chunk_size: int = 200
+    chunk_size: int = 200,
+    provider_config: Dict[str, Any] = None
 ) -> Dict[str, Any]:
     """
     Generate AI summary of items.
@@ -93,6 +100,7 @@ def summarize(
         timezone: Timezone name
         max_items: Maximum items to process
         chunk_size: Chunk size for large inputs
+        provider_config: Full provider configuration (includes api_url, headers, etc.)
 
     Returns:
         Dictionary with 'text', 'tokens', 'model', 'provider', 'duration'
@@ -100,7 +108,9 @@ def summarize(
     start_time = time.time()
 
     # Load provider client
-    client = get_provider_client(provider)
+    # Extract client name from provider_config if available
+    client_name = provider_config.get("client") if provider_config else None
+    client = get_provider_client(provider, client_name)
 
     # Convert items to text
     items_text = items_to_text(items, max_items)
@@ -115,20 +125,30 @@ def summarize(
         items_text=items_text
     )
 
+    # Prepare kwargs for provider
+    kwargs = {
+        "prompt": prompt,
+        "model": model,
+        "temperature": temperature
+    }
+
+    # Add optional provider-specific settings
+    if provider_config:
+        if "api_url" in provider_config:
+            kwargs["api_url"] = provider_config["api_url"]
+        if "headers" in provider_config:
+            kwargs["headers"] = provider_config["headers"]
+
     # Check if chunking needed
     if len(items) > chunk_size:
         # Chunked summarization
         summary_result = _summarize_chunked(
-            client, items, prompt, model, temperature, chunk_size
+            client, items, prompt, model, temperature, chunk_size, kwargs
         )
     else:
         # Single summarization
         try:
-            summary_result = client.generate_summary(
-                prompt=prompt,
-                model=model,
-                temperature=temperature
-            )
+            summary_result = client.generate_summary(**kwargs)
         except Exception as e:
             raise RuntimeError(f"Summarization failed: {str(e)}")
 

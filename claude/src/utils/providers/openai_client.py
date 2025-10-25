@@ -7,10 +7,20 @@ def generate_summary(
     prompt: str,
     model: str = "gpt-4.1-mini",
     temperature: float = 0.2,
+    api_url: str = None,
+    headers: Dict[str, str] = None,
     **kwargs
 ) -> Dict[str, Any]:
     """
     Generate summary using OpenAI API.
+
+    Args:
+        prompt: Prompt text
+        model: Model name
+        temperature: Temperature setting
+        api_url: Optional custom API URL (e.g., for proxies)
+        headers: Optional custom headers (e.g., for Portkey)
+        **kwargs: Additional parameters
 
     Returns:
         dict with 'text', 'tokens', and 'model' keys
@@ -24,7 +34,16 @@ def generate_summary(
     if not api_key:
         raise ValueError("OPENAI_API_KEY not set in environment")
 
-    client = openai.OpenAI(api_key=api_key)
+    # Build client with optional custom URL and headers
+    client_kwargs = {"api_key": api_key}
+
+    if api_url:
+        client_kwargs["base_url"] = api_url
+
+    if headers:
+        client_kwargs["default_headers"] = headers
+
+    client = openai.OpenAI(**client_kwargs)
 
     try:
         response = client.chat.completions.create(

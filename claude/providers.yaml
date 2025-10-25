@@ -5,44 +5,69 @@ providers:
     client: openai_client
     model: gpt-4.1-mini
     temperature: 0.2
+    # api_url: https://api.openai.com/v1  # Optional: custom API endpoint
 
   anthropic:
     client: anthropic_client
     model: claude-haiku-4-5-20251001
     temperature: 0.2
+    # api_url: https://api.anthropic.com  # Optional: custom API endpoint
 
   gemini:
     client: gemini_client
     model: gemini-1.5-pro
     temperature: 0.2
+    # api_url: https://generativelanguage.googleapis.com  # Optional: custom API endpoint
 
   ollama:
     client: ollama_client
     model: qwen2.5:7b-instruct # granite3.3:8b
     temperature: 0.2
+    # api_url: http://localhost:11434  # Optional: custom Ollama endpoint
 
   lmstudio:
     client: lmstudio_client
     model: qwen2.5:7b-instruct
     temperature: 0.2
+    # api_url: http://localhost:1234  # Optional: custom LM Studio endpoint
 
   qwen:
     client: qwen_client
     model: qwen2.5-7b-chat
     temperature: 0.2
+    # api_url: https://dashscope.aliyuncs.com/api/v1  # Optional: custom Qwen endpoint
 
   grok:
     client: grok_client
-    model: grok-4-fast-reasoning
+    model: grok-beta
     temperature: 0.2
+    # api_url: https://api.x.ai/v1  # Optional: custom Grok endpoint
+    # Example with Portkey proxy:
+    # api_url: https://api.portkey.ai/v1
+    # headers:
+    #   x-portkey-api-key: your-portkey-key
+    #   x-portkey-virtual-key: your-grok-virtual-key
 
   deepseek:
     client: deepseek_client
     model: deepseek-chat
     temperature: 0.2
+    # api_url: https://api.deepseek.com  # Optional: custom DeepSeek endpoint
 
-  openrouter:
+  openrouter_gpt_oss_20b:
     client: openrouter_client
     # model: meta-llama/llama-3.1-8b-instruct
     model: openai/gpt-oss-20b:free
     temperature: 0.2
+    api_url: https://openrouter.ai/api/v1  # Optional: custom OpenRouter endpoint
+
+  # Generic provider - works with ANY OpenAI-compatible API
+  openrouter_minimax:
+    client: generic_client
+    model: minimax/minimax-m2:free
+    temperature: 0.2
+    api_url: https://openrouter.ai/api/v1
+    headers:
+      Authorization: Bearer ${OPENROUTER_API_KEY}
+      HTTP-Referer: https://drupal-news.com
+      X-Title: Drupal News Aggregator

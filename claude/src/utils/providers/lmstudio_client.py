@@ -8,19 +8,35 @@ def generate_summary(
     prompt: str,
     model: str = "qwen2.5:7b-instruct",
     temperature: float = 0.2,
+    api_url: str = None,
+    headers: Dict[str, str] = None,
     **kwargs
 ) -> Dict[str, Any]:
     """
     Generate summary using LM Studio local API (OpenAI compatible).
 
+    Args:
+        prompt: Prompt text
+        model: Model name
+        temperature: Temperature setting
+        api_url: Optional custom API URL
+        headers: Optional custom headers
+        **kwargs: Additional parameters
+
     Returns:
         dict with 'text', 'tokens', and 'model' keys
     """
-    base_url = os.getenv("LMSTUDIO_BASE_URL", "http://localhost:1234")
+    base_url = api_url if api_url else os.getenv("LMSTUDIO_BASE_URL", "http://localhost:1234")
+
+    # Build headers
+    request_headers = {}
+    if headers:
+        request_headers.update(headers)
 
     try:
         response = httpx.post(
             f"{base_url}/v1/chat/completions",
+            headers=request_headers if request_headers else None,
             json={
                 "model": model,
                 "messages": [

@@ -56,13 +56,31 @@ def load_config(config_path: str = "config.json") -> dict:
     return config
 
 
+def expand_env_vars(data):
+    """Recursively expand environment variables in config data."""
+    import re
+    if isinstance(data, dict):
+        return {k: expand_env_vars(v) for k, v in data.items()}
+    elif isinstance(data, list):
+        return [expand_env_vars(item) for item in data]
+    elif isinstance(data, str):
+        # Replace ${VAR} or $VAR with environment variable value
+        def replace_var(match):
+            var_name = match.group(1) or match.group(2)
+            return os.getenv(var_name, match.group(0))
+        return re.sub(r'\$\{([^}]+)\}|\$(\w+)', replace_var, data)
+    else:
+        return data
+
+
 def load_providers_config(providers_path: str = "providers.yaml") -> dict:
-    """Load providers configuration."""
+    """Load providers configuration and expand environment variables."""
     providers = safe_read_yaml(Path(providers_path))
     if not providers:
         print(f"Error: Could not load providers from {providers_path}")
         sys.exit(1)
-    return providers
+    # Expand environment variables in the config
+    return expand_env_vars(providers)
 
 
 def load_env_vars(env_path: str = ".env") -> dict:
@@ -278,7 +296,8 @@ def main():
                     model=model_name,
                     temperature=provider_config.get("temperature", 0.2),
                     timeframe_days=timeframe_days,
-                    timezone=timezone
+                    timezone=timezone,
+                    provider_config=provider_config
                 )
 
                 summary_text = summary_result["text"]

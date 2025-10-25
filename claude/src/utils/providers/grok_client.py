@@ -8,10 +8,20 @@ def generate_summary(
     prompt: str,
     model: str = "grok-beta",
     temperature: float = 0.2,
+    api_url: str = None,
+    headers: Dict[str, str] = None,
     **kwargs
 ) -> Dict[str, Any]:
     """
     Generate summary using Grok API (OpenAI compatible).
+
+    Args:
+        prompt: Prompt text
+        model: Model name
+        temperature: Temperature setting
+        api_url: Optional custom API URL (e.g., for Portkey proxy)
+        headers: Optional custom headers (e.g., Portkey auth headers)
+        **kwargs: Additional parameters
 
     Returns:
         dict with 'text', 'tokens', and 'model' keys
@@ -20,15 +30,23 @@ def generate_summary(
     if not api_key:
         raise ValueError("GROK_API_KEY not set in environment")
 
-    base_url = "https://api.x.ai/v1"
+    # Use custom URL if provided, otherwise default
+    base_url = api_url if api_url else "https://api.x.ai/v1"
+
+    # Build headers
+    request_headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json"
+    }
+
+    # Add custom headers if provided (e.g., for Portkey)
+    if headers:
+        request_headers.update(headers)
 
     try:
         response = httpx.post(
             f"{base_url}/chat/completions",
-            headers={
-                "Authorization": f"Bearer {api_key}",
-                "Content-Type": "application/json"
-            },
+            headers=request_headers,
             json={
                 "model": model,
                 "messages": [

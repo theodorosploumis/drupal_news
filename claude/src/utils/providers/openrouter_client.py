@@ -8,10 +8,20 @@ def generate_summary(
     prompt: str,
     model: str = "meta-llama/llama-3.1-8b-instruct",
     temperature: float = 0.2,
+    api_url: str = None,
+    headers: Dict[str, str] = None,
     **kwargs
 ) -> Dict[str, Any]:
     """
     Generate summary using OpenRouter API.
+
+    Args:
+        prompt: Prompt text
+        model: Model name
+        temperature: Temperature setting
+        api_url: Optional custom API URL
+        headers: Optional custom headers
+        **kwargs: Additional parameters
 
     Returns:
         dict with 'text', 'tokens', and 'model' keys
@@ -20,17 +30,23 @@ def generate_summary(
     if not api_key:
         raise ValueError("OPENROUTER_API_KEY not set in environment")
 
-    base_url = "https://openrouter.ai/api/v1"
+    base_url = api_url if api_url else "https://openrouter.ai/api/v1"
+
+    # Build headers
+    request_headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json",
+        "HTTP-Referer": "https://github.com/drupal-weekly",
+        "X-Title": "Drupal News Aggregator"
+    }
+
+    if headers:
+        request_headers.update(headers)
 
     try:
         response = httpx.post(
             f"{base_url}/chat/completions",
-            headers={
-                "Authorization": f"Bearer {api_key}",
-                "Content-Type": "application/json",
-                "HTTP-Referer": "https://github.com/drupal-weekly",
-                "X-Title": "Drupal Aggregator Aggregator"
-            },
+            headers=request_headers,
             json={
                 "model": model,
                 "messages": [

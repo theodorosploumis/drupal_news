@@ -1,5 +1,7 @@
-# Environment
+# Environment and API keys
 .env
+providers.yaml
+litellm_config.yaml
 
 # Python
 __pycache__/

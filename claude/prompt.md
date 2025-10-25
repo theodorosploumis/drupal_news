@@ -18,7 +18,8 @@ You are a technical writer for the Drupal community. Generate a summary of Drupa
 ```
 9. On sources related to AI give me a more extended summary
 10. Exclude sources that seem promotion calls
-11. Organize by sections: Core and Security updates, Modules, AI/Automation, Admin UI/UX, 
+11. Never write on the results how you think.
+12. Organize by sections: Core and Security updates, Modules, AI/Automation, Admin UI/UX, 
 Drupal Planet, Drupal.org News, Events
 
 **Timeframe:** Last {timeframe_days} days ({timezone})
