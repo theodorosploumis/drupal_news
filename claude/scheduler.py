@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Scheduler wrapper for Drupal Weekly News Aggregator.
+Scheduler wrapper for Drupal News Aggregator.
 This wrapper adds the src directory to the path and runs the scheduler module.
 """
 import sys
