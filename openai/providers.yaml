@@ -1,0 +1,47 @@
+default_provider: openai
+
+providers:
+  openai:
+    client: openai_client
+    model: gpt-4.1-mini
+    temperature: 0.2
+
+  anthropic:
+    client: anthropic_client
+    model: claude-3-5-sonnet
+    temperature: 0.2
+
+  gemini:
+    client: gemini_client
+    model: gemini-1.5-pro
+    temperature: 0.2
+
+  ollama:
+    client: ollama_client
+    model: qwen2.5:7b-instruct
+    temperature: 0.2
+
+  lmstudio:
+    client: lmstudio_client
+    model: qwen2.5:7b-instruct
+    temperature: 0.2
+
+  qwen:
+    client: qwen_client
+    model: qwen2.5-7b-chat
+    temperature: 0.2
+
+  grok:
+    client: grok_client
+    model: grok-beta
+    temperature: 0.2
+
+  deepseek:
+    client: deepseek_client
+    model: deepseek-chat
+    temperature: 0.2
+
+  openrouter:
+    client: openrouter_client
+    model: meta-llama/llama-3.1-8b-instruct
+    temperature: 0.2

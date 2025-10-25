@@ -1,0 +1,35 @@
+# Python venvs and caches
+.venv/
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Editor settings
+.vscode/
+.idea/
+*.swp
+
+# Runtime artifacts
+runs/
+cache/
+*.log
+*.tar.gz
+
+# Environment files
+.env
+.env.*
+
+# Python packaging
+*.egg-info/
+.eggs/
+build/
+dist/
+
+# Coverage / pytest
+.coverage
+.cache/
+pytest_cache/
+
+# OS junk
+.DS_Store
+Thumbs.db
