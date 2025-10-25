@@ -1,4 +1,4 @@
-# Drupal Weekly News Aggregator
+# Drupal News Aggregator
 
 This project compiles the previous week's Drupal highlights from official sources, summarizes them via pluggable AI providers, and emits Markdown, JSON, and email artifacts for human review.
 

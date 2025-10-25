@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Main entry point for Drupal Weekly News Aggregator.
+Main entry point for Drupal News Aggregator.
 This wrapper adds the src directory to the path and runs the main index module.
 """
 import sys

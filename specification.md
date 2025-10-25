@@ -1,4 +1,4 @@
-# Drupal Weekly News Aggregator — Implementation Specification
+# Drupal News Aggregator — Implementation Specification
 
 ---
 

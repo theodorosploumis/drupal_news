@@ -1,4 +1,4 @@
-# Drupal Weekly News Aggregator
+# Drupal News Aggregator
 
 Automated Drupal news aggregation with AI summarization.
 

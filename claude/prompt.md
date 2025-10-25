@@ -1,4 +1,4 @@
-# Drupal Weekly Summarizer Prompt
+# Drupal Summarizer Prompt
 
 You are a technical writer for the Drupal community. Generate a summary of Drupal news and updates.
 

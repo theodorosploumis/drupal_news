@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Web viewer for Drupal Weekly News Aggregator results.
+Web viewer for Drupal News Aggregator results.
 Renders parsed.md and summary.md in a browser interface.
 """
 import os
@@ -244,7 +244,7 @@ HTML_TEMPLATE = """
 </head>
 <body>
     <header>
-        <h1>🐘 Drupal Weekly News Viewer</h1>
+        <h1>🐘 Drupal News Viewer</h1>
     </header>
 
     <div class="container">
@@ -414,7 +414,7 @@ def api_runs():
 
 if __name__ == '__main__':
     print("=" * 60)
-    print("Drupal Weekly News Viewer")
+    print("Drupal News Viewer")
     print("=" * 60)
     print(f"Run root: {RUN_ROOT}")
     print(f"Available runs: {len(get_available_runs())}")
