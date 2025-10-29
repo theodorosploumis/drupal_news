@@ -297,7 +297,7 @@ $changelog"
     echo
     info "Next steps:"
     echo "  1. Push the tag to trigger GitHub Actions"
-    echo "  2. Monitor the build at: https://github.com/yourusername/drupal-news/actions"
+    echo "  2. Monitor the build at: https://github.com/theodorosploumis/drupal_news/actions"
     echo "  3. Package will be published to PyPI automatically"
 }
 

@@ -218,7 +218,7 @@ pip install drupal-news[all-providers]
 
 ```bash
 # Clone repository
-git clone https://github.com/yourusername/drupal-news.git
+git clone https://github.com/theodorosploumis/drupal_news.git
 cd drupal-news
 
 # Install in development mode
@@ -357,5 +357,5 @@ python3 build_package.py --version 2.0.0
 ## Support
 
 For issues or questions:
-- GitHub Issues: https://github.com/yourusername/drupal-news/issues
-- Documentation: https://github.com/yourusername/drupal-news#readme
+- GitHub Issues: https://github.com/theodorosploumis/drupal_news/issues
+- Documentation: https://github.com/theodorosploumis/drupal_news#readme

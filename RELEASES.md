@@ -8,7 +8,6 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Initial
 
-
 ## Future Releases
 
 See [GitHub Releases](https://github.com/theodorosploumis/drupal_news/releases) for upcoming versions.

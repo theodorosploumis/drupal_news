@@ -124,7 +124,7 @@ When you push a version tag (e.g., `v0.2.0`), GitHub Actions automatically:
 
 Check build status at:
 ```
-https://github.com/yourusername/drupal-news/actions
+https://github.com/theodorosploumis/drupal_news/actions
 ```
 
 ### Verify Publication
