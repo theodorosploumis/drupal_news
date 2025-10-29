@@ -71,7 +71,7 @@ def get_provider_client(provider_name: str, client_name: str = None):
         # Remove _client suffix if already present
         if not module_name.endswith('_client'):
             module_name = f"{module_name}_client"
-        module = importlib.import_module(f"utils.providers.{module_name}")
+        module = importlib.import_module(f"drupal_news.utils.providers.{module_name}")
         return module
     except ImportError as e:
         raise ImportError(f"Provider '{provider_name}' (client: {client_name or provider_name}) not found: {e}")
