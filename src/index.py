@@ -189,6 +189,11 @@ def main():
     exit_code = EXIT_SUCCESS
     errors = []
 
+    # Initialize variables for metrics (in case of early exit/exception)
+    cache = None
+    all_items = []
+    summary_result = {"provider": "none", "model": "none", "tokens": 0, "cost": 0}
+
     try:
         # Load or fetch sources
         if use_cached_sources:
@@ -388,23 +393,6 @@ def main():
         else:
             logger.info("email", "Email skipped")
 
-        # Collect metrics
-        duration = time.time() - start_time
-        cache_stats = cache.get_stats() if not use_cached_sources else {"valid": 0, "expired": 0, "total": 0}
-
-        metrics = collect_metrics(
-            run_dir,
-            summary_result.get("provider", "none"),
-            summary_result.get("model", "none"),
-            duration,
-            all_items,
-            summary_result,
-            exit_code,
-            cache_stats,
-            errors
-        )
-        logger.info("metrics", f"Metrics collected: {duration:.1f}s, {len(all_items)} items")
-
         # Verify integrity
         logger.info("integrity", "Verifying run integrity...")
         if verify_run_simple(run_dir):
@@ -434,6 +422,34 @@ def main():
         errors.append(str(e))
         if exit_code == EXIT_SUCCESS:
             exit_code = 1
+    finally:
+        # Always collect metrics, even on failure or early exit
+        duration = time.time() - start_time
+
+        # Get cache stats if cache exists
+        cache_stats = {"valid": 0, "expired": 0, "total": 0}
+        if cache is not None:
+            try:
+                cache_stats = cache.get_stats()
+            except Exception:
+                pass  # Use default empty stats
+
+        # Collect and save metrics
+        try:
+            metrics = collect_metrics(
+                run_dir,
+                summary_result.get("provider", "none"),
+                summary_result.get("model", "none"),
+                duration,
+                all_items,
+                summary_result,
+                exit_code,
+                cache_stats,
+                errors
+            )
+            logger.info("metrics", f"Metrics collected: {duration:.1f}s, {len(all_items)} items")
+        except Exception as e:
+            logger.error("metrics", f"Failed to collect metrics: {e}")
 
     # Final log
     duration = time.time() - start_time
