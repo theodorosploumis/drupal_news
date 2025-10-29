@@ -314,7 +314,7 @@ def generate_placeholder_summary(items: List[Dict[str, Any]], timeframe_days: in
     Returns:
         Placeholder markdown summary
     """
-    return f"""# Drupal Newesleter Summary (Dry Run)
+    return f"""# Drupal Newsletter Summary (Dry Run)
 
 **Timeframe:** Last {timeframe_days} days
 
