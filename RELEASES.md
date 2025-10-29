@@ -4,6 +4,11 @@ All notable changes to Drupal News Aggregator will be documented here.
 
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.0.2] - 2025-10-29
+
+Release v0.0.2
+
+
 ## [0.0.1] - 2025-10-29
 
 Initial
