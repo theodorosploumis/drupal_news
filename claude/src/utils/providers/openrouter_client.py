@@ -62,15 +62,23 @@ def generate_summary(
 
         data = response.json()
         text = data["choices"][0]["message"]["content"]
-        tokens = data.get("usage", {}).get("total_tokens", 0)
+        usage = data.get("usage", {})
+        total_tokens = usage.get("total_tokens")
+        prompt_tokens = usage.get("prompt_tokens")
+        completion_tokens = usage.get("completion_tokens")
 
-        # Estimate if not provided
-        if tokens == 0:
-            tokens = len(prompt.split()) + len(text.split())
+        if total_tokens is None:
+            total_tokens = (prompt_tokens or 0) + (completion_tokens or 0)
+
+        # Estimate if usage not provided
+        if not total_tokens:
+            total_tokens = len(prompt.split()) + len(text.split())
 
         return {
             "text": text,
-            "tokens": tokens,
+            "tokens": total_tokens,
+            "input_tokens": prompt_tokens,
+            "output_tokens": completion_tokens,
             "model": model,
             "provider": "openrouter"
         }

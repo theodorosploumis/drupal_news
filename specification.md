@@ -18,6 +18,8 @@ Automated weekly Drupal aggregator: collect, normalize, cache, validate, summari
 * Validate and ensure reference integrity.
 * Email the weekly summary with a PDF attachment.
 * Collect metrics and maintain logs.
+* Calculate the costs for each AI run.
+* Create basic md files for help (README.md, USAGE.md, ). Put everything except README.md under `docs/` folder.
 
 ---
 
@@ -536,7 +538,6 @@ def main():
 
 - This app is for advanced developers.
 - Do not add detailed explanations on md files. Only the commands needed with a basic short explanation.
-- Add a GPL-V2 licence. Get it from https://github.com/github/choosealicense.com/raw/refs/heads/gh-pages/_licenses/gpl-2.0.txt
 - Add a .gitignore with the sensitive data on it so we can use git.
 - Keep README.md short, no duplicates on it.
 

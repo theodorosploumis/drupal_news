@@ -112,11 +112,19 @@ def generate_summary(
 
         # Extract response
         summary_text = data["choices"][0]["message"]["content"]
-        tokens_used = data.get("usage", {}).get("total_tokens", 0)
+        usage = data.get("usage", {})
+        total_tokens = usage.get("total_tokens")
+        prompt_tokens = usage.get("prompt_tokens")
+        completion_tokens = usage.get("completion_tokens")
+
+        if total_tokens is None:
+            total_tokens = (prompt_tokens or 0) + (completion_tokens or 0)
 
         return {
             "text": summary_text,
-            "tokens": tokens_used,
+            "tokens": total_tokens or 0,
+            "input_tokens": prompt_tokens,
+            "output_tokens": completion_tokens,
             "model": model,
             "provider": "generic"
         }

@@ -56,9 +56,15 @@ def generate_summary(
             max_tokens=kwargs.get("max_tokens", 4000)
         )
 
+        prompt_tokens = getattr(response.usage, "prompt_tokens", 0)
+        completion_tokens = getattr(response.usage, "completion_tokens", 0)
+        total_tokens = getattr(response.usage, "total_tokens", prompt_tokens + completion_tokens)
+
         return {
             "text": response.choices[0].message.content,
-            "tokens": response.usage.total_tokens,
+            "tokens": total_tokens,
+            "input_tokens": prompt_tokens or None,
+            "output_tokens": completion_tokens or None,
             "model": model,
             "provider": "openai"
         }

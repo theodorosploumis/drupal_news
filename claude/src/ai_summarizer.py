@@ -77,6 +77,40 @@ def get_provider_client(provider_name: str, client_name: str = None):
         raise ImportError(f"Provider '{provider_name}' (client: {client_name or provider_name}) not found: {e}")
 
 
+
+def calculate_cost(provider: str, provider_config: Dict[str, Any], summary_result: Dict[str, Any]) -> float:
+    """Estimate USD cost for a summary run based on token usage and configured pricing."""
+    if not provider_config:
+        return 0.0
+
+    pricing = provider_config.get("pricing")
+    if not pricing:
+        return 0.0
+
+    input_tokens = summary_result.get("input_tokens")
+    output_tokens = summary_result.get("output_tokens")
+    total_tokens = summary_result.get("tokens", 0) or 0
+
+    cost = 0.0
+
+    input_rate = pricing.get("input_cost_per_1k")
+    output_rate = pricing.get("output_cost_per_1k")
+    blended_rate = pricing.get("per_1k_tokens")
+
+    if input_tokens is not None and input_rate is not None:
+        cost += (input_tokens / 1000.0) * float(input_rate)
+
+    if output_tokens is not None and output_rate is not None:
+        cost += (output_tokens / 1000.0) * float(output_rate)
+
+    # Fallback to blended pricing when detailed usage is absent
+    if cost == 0.0 and blended_rate is not None:
+        cost += (total_tokens / 1000.0) * float(blended_rate)
+
+    return round(cost, 6)
+
+
+
 def summarize(
     items: List[Dict[str, Any]],
     provider: str,
@@ -118,16 +152,17 @@ def summarize(
     # Load prompt template from file or use default
     template = load_prompt_template()
 
-    # Generate prompt
-    prompt = template.format(
-        timeframe_days=timeframe_days,
-        timezone=timezone,
-        items_text=items_text
-    )
+    def render_prompt(items_text_value: str) -> str:
+        return template.format(
+            timeframe_days=timeframe_days,
+            timezone=timezone,
+            items_text=items_text_value
+        )
 
-    # Prepare kwargs for provider
-    kwargs = {
-        "prompt": prompt,
+    prompt = render_prompt(items_text)
+
+    # Prepare kwargs for provider (prompt injected per request)
+    base_kwargs = {
         "model": model,
         "temperature": temperature
     }
@@ -135,26 +170,32 @@ def summarize(
     # Add optional provider-specific settings
     if provider_config:
         if "api_url" in provider_config:
-            kwargs["api_url"] = provider_config["api_url"]
+            base_kwargs["api_url"] = provider_config["api_url"]
         if "headers" in provider_config:
-            kwargs["headers"] = provider_config["headers"]
+            base_kwargs["headers"] = provider_config["headers"]
 
     # Check if chunking needed
     if len(items) > chunk_size:
-        # Chunked summarization
         summary_result = _summarize_chunked(
-            client, items, prompt, model, temperature, chunk_size, kwargs
+            client,
+            items,
+            render_prompt,
+            chunk_size,
+            base_kwargs
         )
     else:
-        # Single summarization
+        request_kwargs = dict(base_kwargs)
+        request_kwargs["prompt"] = prompt
         try:
-            summary_result = client.generate_summary(**kwargs)
+            summary_result = client.generate_summary(**request_kwargs)
         except Exception as e:
             raise RuntimeError(f"Summarization failed: {str(e)}")
 
-    # Add duration
-    duration = time.time() - start_time
-    summary_result["duration"] = duration
+    # Add metadata
+    summary_result.setdefault("provider", provider)
+    summary_result.setdefault("model", model)
+    summary_result["duration"] = time.time() - start_time
+    summary_result["cost"] = calculate_cost(provider, provider_config or {}, summary_result)
 
     return summary_result
 
@@ -162,58 +203,46 @@ def summarize(
 def _summarize_chunked(
     client,
     items: List[Dict[str, Any]],
-    base_prompt: str,
-    model: str,
-    temperature: float,
-    chunk_size: int
+    render_prompt,
+    chunk_size: int,
+    base_kwargs: Dict[str, Any]
 ) -> Dict[str, Any]:
-    """
-    Summarize items in chunks for large datasets.
-
-    Args:
-        client: Provider client module
-        items: List of items
-        base_prompt: Base prompt template
-        model: Model name
-        temperature: Temperature
-        chunk_size: Size of each chunk
-
-    Returns:
-        Combined summary result
-    """
+    """Summarize items in chunks for large datasets."""
     summaries = []
     total_tokens = 0
+    total_input_tokens = 0
+    total_output_tokens = 0
 
-    # Split into chunks
     for i in range(0, len(items), chunk_size):
         chunk = items[i:i + chunk_size]
-        chunk_text = items_to_text(chunk)
-
-        prompt = base_prompt.replace("{items_text}", chunk_text)
+        chunk_kwargs = dict(base_kwargs)
+        chunk_kwargs["prompt"] = render_prompt(items_to_text(chunk))
 
         try:
-            result = client.generate_summary(
-                prompt=prompt,
-                model=model,
-                temperature=temperature
-            )
-
-            summaries.append(result["text"])
-            total_tokens += result.get("tokens", 0)
-
+            result = client.generate_summary(**chunk_kwargs)
+            summaries.append(result.get("text", ""))
+            total_tokens += result.get("tokens", 0) or 0
+            total_input_tokens += result.get("input_tokens") or 0
+            total_output_tokens += result.get("output_tokens") or 0
         except Exception as e:
             print(f"Warning: Chunk {i // chunk_size + 1} failed: {e}")
 
-    # Combine summaries
-    combined_text = "\n\n".join(summaries)
+    combined_text = "\n\n".join(filter(None, summaries))
 
-    return {
+    summary = {
         "text": combined_text,
         "tokens": total_tokens,
-        "model": model,
+        "model": base_kwargs.get("model"),
         "provider": client.__name__.split(".")[-1].replace("_client", ""),
         "chunked": True
     }
+
+    if total_input_tokens:
+        summary["input_tokens"] = total_input_tokens
+    if total_output_tokens:
+        summary["output_tokens"] = total_output_tokens
+
+    return summary
 
 
 def summarize_with_fallback(
@@ -259,7 +288,8 @@ def summarize_with_fallback(
                 model=provider_config["model"],
                 temperature=provider_config.get("temperature", 0.2),
                 timeframe_days=timeframe_days,
-                timezone=timezone
+                timezone=timezone,
+                provider_config=provider_config
             )
 
             return result

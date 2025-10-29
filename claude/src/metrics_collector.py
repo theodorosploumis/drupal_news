@@ -42,6 +42,7 @@ def collect_metrics(
         "items_rss": sum(1 for item in items if item.get("source_type") == "rss"),
         "items_page": sum(1 for item in items if item.get("source_type") == "page"),
         "tokens_used": summary_result.get("tokens", 0),
+        "ai_cost_usd": round(float(summary_result.get("cost", 0.0)), 6),
         "exit_code": exit_code
     }
 

@@ -56,9 +56,15 @@ def generate_summary(
             ]
         )
 
+        input_tokens = getattr(response.usage, "input_tokens", 0)
+        output_tokens = getattr(response.usage, "output_tokens", 0)
+        total_tokens = (input_tokens or 0) + (output_tokens or 0)
+
         return {
             "text": response.content[0].text,
-            "tokens": response.usage.input_tokens + response.usage.output_tokens,
+            "tokens": total_tokens,
+            "input_tokens": input_tokens or None,
+            "output_tokens": output_tokens or None,
             "model": model,
             "provider": "anthropic"
         }
