@@ -87,10 +87,11 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/yourusername/drupal-news"
-Documentation = "https://github.com/yourusername/drupal-news#readme"
-Repository = "https://github.com/yourusername/drupal-news"
-Issues = "https://github.com/yourusername/drupal-news/issues"
+Homepage = "https://github.com/theodorosploumis/drupal_news"
+Documentation = "https://github.com/theodorosploumis/drupal_news#readme"
+Repository = "https://github.com/theodorosploumis/drupal_news"
+Issues = "https://github.com/theodorosploumis/drupal_news/issues"
+Changelog = "https://github.com/theodorosploumis/drupal_news/blob/main/CHANGELOG.md"
 
 [project.scripts]
 drupal-news = "drupal_news.cli:main"
