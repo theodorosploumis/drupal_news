@@ -72,179 +72,12 @@ HTML_TEMPLATE = """
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Drupal Weekly Viewer - {{ run_date }}</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            background: #f5f5f5;
-        }
-        header {
-            background: #0678be;
-            color: white;
-            padding: 1rem 2rem;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        header h1 {
-            font-size: 1.5rem;
-            font-weight: 500;
-        }
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 2rem;
-        }
-        .controls {
-            background: white;
-            padding: 1rem;
-            margin-bottom: 1rem;
-            border-radius: 4px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .controls select {
-            padding: 0.5rem;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: 1rem;
-        }
-        .tabs {
-            display: flex;
-            gap: 0.5rem;
-            margin-bottom: 1rem;
-        }
-        .tab {
-            background: white;
-            border: none;
-            padding: 0.75rem 1.5rem;
-            cursor: pointer;
-            border-radius: 4px 4px 0 0;
-            font-size: 1rem;
-            transition: background 0.2s;
-        }
-        .tab:hover {
-            background: #f0f0f0;
-        }
-        .tab.active {
-            background: #0678be;
-            color: white;
-        }
-        .content {
-            background: white;
-            padding: 2rem;
-            border-radius: 4px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-            min-height: 500px;
-        }
-        .tab-content {
-            display: none;
-        }
-        .tab-content.active {
-            display: block;
-        }
-        ul, ol {
-            list-style-position: inside;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 1rem 0;
-        }
-        th, td {
-            padding: 0.75rem;
-            text-align: left;
-            border-bottom: 1px solid #ddd;
-        }
-        th {
-            background: #f8f9fa;
-            font-weight: 600;
-        }
-        tr:hover {
-            background: #f8f9fa;
-        }
-        a {
-            color: #0678be;
-            text-decoration: none;
-        }
-        a:hover {
-            text-decoration: underline;
-        }
-        h1, h2, h3 {
-            margin-top: 1.5rem;
-            margin-bottom: 1rem;
-        }
-        h1 { font-size: 2rem; }
-        h2 { font-size: 1.5rem; color: #0678be; }
-        h3 { font-size: 1.25rem; }
-        code {
-            background: #f4f4f4;
-            padding: 0.2rem 0.4rem;
-            border-radius: 3px;
-            font-family: "Courier New", monospace;
-        }
-        pre {
-            background: #f4f4f4;
-            padding: 1rem;
-            border-radius: 4px;
-            overflow-x: auto;
-            margin: 1rem 0;
-        }
-        .no-data {
-            text-align: center;
-            color: #999;
-            padding: 3rem;
-            font-size: 1.1rem;
-        }
-        .view-mode {
-            display: flex;
-            gap: 0.5rem;
-        }
-        .view-mode button {
-            padding: 0.5rem 1rem;
-            border: 1px solid #ddd;
-            background: white;
-            cursor: pointer;
-            border-radius: 4px;
-        }
-        .view-mode button.active {
-            background: #0678be;
-            color: white;
-            border-color: #0678be;
-        }
-        .split-view {
-            display: none;
-            grid-template-columns: 1fr 1fr;
-            gap: 1rem;
-        }
-        .split-view.active {
-            display: grid;
-        }
-        .split-panel {
-            background: white;
-            padding: 2rem;
-            border-radius: 4px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-            overflow-y: auto;
-            max-height: 80vh;
-        }
-        .split-panel h2:first-child {
-            margin-top: 0;
-            border-bottom: 2px solid #0678be;
-            padding-bottom: 0.5rem;
-        }
-    </style>
+    <title>Drupal News Viewer - {{ run_date }}</title>
+    <link crossorigin="anonymous" media="all" rel="stylesheet" href="./static/css/viewer.css" />
 </head>
 <body>
     <header>
-        <h1>🐘 Drupal News Viewer</h1>
+        <h1>💧 Drupal News Viewer</h1>
     </header>
 
     <div class="container">
@@ -257,10 +90,6 @@ HTML_TEMPLATE = """
                     {% endfor %}
                 </select>
             </div>
-            <div class="view-mode">
-                <button onclick="setViewMode('tabs')" class="active" id="tabs-btn">Tabs</button>
-                <button onclick="setViewMode('split')" id="split-btn">Split View</button>
-            </div>
         </div>
 
         <div id="tabs-view" class="active">
@@ -271,7 +100,7 @@ HTML_TEMPLATE = """
                 <button class="tab" onclick="showTab('log')">Log</button>
             </div>
 
-            <div class="content">
+            <div class="content markdown-content">
                 <div id="summary-content" class="tab-content active">
                     {% if summary %}
                         {{ summary|safe }}
@@ -307,25 +136,6 @@ HTML_TEMPLATE = """
                 </div>
             </div>
         </div>
-
-        <div id="split-view" class="split-view">
-            <div class="split-panel">
-                <h2>Summary</h2>
-                {% if summary %}
-                    {{ summary|safe }}
-                {% else %}
-                    <div class="no-data">Summary not available</div>
-                {% endif %}
-            </div>
-            <div class="split-panel">
-                <h2>Parsed Data</h2>
-                {% if parsed %}
-                    {{ parsed|safe }}
-                {% else %}
-                    <div class="no-data">Parsed data not available</div>
-                {% endif %}
-            </div>
-        </div>
     </div>
 
     <script>
@@ -349,22 +159,6 @@ HTML_TEMPLATE = """
 
         function changeRun(runDate) {
             window.location.href = '/run/' + runDate;
-        }
-
-        function setViewMode(mode) {
-            document.querySelectorAll('.view-mode button').forEach(btn => {
-                btn.classList.remove('active');
-            });
-
-            if (mode === 'tabs') {
-                document.getElementById('tabs-view').classList.add('active');
-                document.getElementById('split-view').classList.remove('active');
-                document.getElementById('tabs-btn').classList.add('active');
-            } else {
-                document.getElementById('tabs-view').classList.remove('active');
-                document.getElementById('split-view').classList.add('active');
-                document.getElementById('split-btn').classList.add('active');
-            }
         }
     </script>
 </body>

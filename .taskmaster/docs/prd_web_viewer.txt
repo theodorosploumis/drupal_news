@@ -1,0 +1,500 @@
+# Web Viewer Interface PRD
+
+<overview>
+## Problem Statement
+Reading Markdown files directly is inconvenient. Users need a web interface to browse aggregator results with rendered Markdown, clickable links, and side-by-side comparison of parsed vs summarized data.
+
+## Target Users
+- Developers reviewing weekly reports in browser
+- QA reviewers comparing parsed data vs AI summaries
+- Stakeholders viewing historical runs
+- Users wanting quick access without opening files
+
+## Success Metrics
+- All Markdown rendered to HTML with tables
+- 100% of URLs converted to clickable links with security attributes
+- Side-by-side view for comparison
+- Run navigation working for all dates
+- Page load time < 2 seconds
+</overview>
+
+---
+
+<functional-decomposition>
+## Capability Tree
+
+### Capability: Web Server
+Flask-based HTTP server for viewing reports
+
+#### Feature: Flask Application
+- **Description**: Initialize Flask app with routes
+- **Inputs**: Config (port, host)
+- **Outputs**: Running web server
+- **Behavior**: Start Flask on localhost:5000, register routes
+
+#### Feature: Route Handling
+- **Description**: Define HTTP routes for viewer
+- **Inputs**: HTTP request
+- **Outputs**: HTML response
+- **Behavior**: Match URL path, call handler, return rendered template
+
+#### Feature: Static File Serving
+- **Description**: Serve CSS, JS, images
+- **Inputs**: Static file path
+- **Outputs**: File content
+- **Behavior**: Serve from /static directory
+
+### Capability: Run Discovery
+Find and list available aggregator runs
+
+#### Feature: Run Listing
+- **Description**: List all run directories
+- **Inputs**: Run root path
+- **Outputs**: List of (date, path) tuples
+- **Behavior**: Scan runs/ directory, parse YYYY-MM-DD format, sort
+
+#### Feature: Latest Run Detection
+- **Description**: Find most recent run
+- **Inputs**: Run list
+- **Outputs**: Latest run date and path
+- **Behavior**: Sort by date descending, return first
+
+#### Feature: Run Validation
+- **Description**: Verify run has required files
+- **Inputs**: Run directory path
+- **Outputs**: Boolean (valid/invalid)
+- **Behavior**: Check for parsed.md, summary.md, metrics.json
+
+#### Feature: API Endpoint - List Runs
+- **Description**: JSON API for available runs
+- **Inputs**: HTTP GET /api/runs
+- **Outputs**: JSON list of runs
+- **Behavior**: Return run dates and metadata as JSON
+
+### Capability: Markdown Rendering
+Convert Markdown to HTML with link handling
+
+#### Feature: Markdown to HTML
+- **Description**: Render Markdown files to HTML
+- **Inputs**: Markdown text
+- **Outputs**: HTML string
+- **Behavior**: Use markdown library, enable tables extension
+
+#### Feature: Link Conversion
+- **Description**: Convert plain URLs to clickable links
+- **Inputs**: HTML content
+- **Outputs**: HTML with <a> tags
+- **Behavior**: Regex find URLs, wrap in <a href>, add target="_blank"
+
+#### Feature: Security Attributes
+- **Description**: Add security attributes to links
+- **Inputs**: HTML with links
+- **Outputs**: Secured HTML
+- **Behavior**: Add rel="noopener noreferrer" to all <a> tags
+
+#### Feature: Table Rendering
+- **Description**: Render Markdown tables as HTML tables
+- **Inputs**: Markdown with tables
+- **Outputs**: HTML <table> elements
+- **Behavior**: Enable tables extension, apply styling
+
+### Capability: View Modes
+Different presentation layouts
+
+#### Feature: Tabs View
+- **Description**: Show parsed.md and summary.md in separate tabs
+- **Inputs**: Run data
+- **Outputs**: HTML with tab interface
+- **Behavior**: Render tabs, switch content on click
+
+#### Feature: Split View
+- **Description**: Side-by-side comparison of parsed vs summary
+- **Inputs**: Run data
+- **Outputs**: HTML with split layout
+- **Behavior**: Two-column layout, synchronized scrolling
+
+#### Feature: Metrics Display
+- **Description**: Show run metrics and logs
+- **Inputs**: metrics.json, run.log
+- **Outputs**: Formatted metrics display
+- **Behavior**: Parse JSON, format as table, show logs
+
+### Capability: Navigation
+Browse between runs and views
+
+#### Feature: Date Navigation
+- **Description**: Navigate to specific run by date
+- **Inputs**: Date (YYYY-MM-DD)
+- **Outputs**: Run page for that date
+- **Behavior**: Route /run/YYYY-MM-DD to run handler
+
+#### Feature: Run Selector
+- **Description**: Dropdown to select run date
+- **Inputs**: List of available runs
+- **Outputs**: HTML select element
+- **Behavior**: Populate dropdown, handle selection
+
+#### Feature: View Toggle
+- **Description**: Switch between tabs and split view
+- **Inputs**: User preference
+- **Outputs**: Updated layout
+- **Behavior**: Toggle CSS classes, store preference
+
+</functional-decomposition>
+
+---
+
+<structural-decomposition>
+## Repository Structure
+
+```
+drupal-weekly/
+├── viewer.py                  # Flask application
+├── templates/
+│   ├── base.html             # Base template
+│   ├── index.html            # Home page
+│   ├── run.html              # Run viewer
+│   └── error.html            # Error page
+└── static/
+    ├── css/
+    │   └── style.css         # Viewer styles
+    └── js/
+        └── viewer.js         # Client-side interactions
+```
+
+## Module Definitions
+
+### Module: viewer
+- **Maps to capability**: Web Server, Run Discovery, Markdown Rendering
+- **Responsibility**: Flask web interface for viewing reports
+- **Exports**:
+  - `app` - Flask application
+  - `index()` - Home route handler
+  - `view_run(date)` - Run viewer route
+  - `api_runs()` - API endpoint for run list
+  - `render_markdown(text)` - Markdown to HTML
+  - `secure_links(html)` - Add security attributes
+
+### Module: templates/base.html
+- **Responsibility**: Base HTML template
+- **Contains**: Header, navigation, footer structure
+
+### Module: templates/index.html
+- **Responsibility**: Home page template
+- **Contains**: Latest run display, run selector
+
+### Module: templates/run.html
+- **Responsibility**: Run viewer template
+- **Contains**: Tabs/split view, Markdown content, metrics
+
+### Module: static/css/style.css
+- **Responsibility**: Viewer styling
+- **Contains**: Layout, colors, responsive design
+
+### Module: static/js/viewer.js
+- **Responsibility**: Client-side interactions
+- **Contains**: Tab switching, view toggle, synchronized scrolling
+
+</structural-decomposition>
+
+---
+
+<dependency-graph>
+## Dependency Chain
+
+### Foundation Layer (Phase 0)
+No dependencies - these are built first.
+
+- **viewer.py (core Flask app)**: Basic Flask setup
+
+### Rendering Layer (Phase 1)
+- **Markdown rendering**: Depends on [viewer.py core]
+- **Link security**: Depends on [Markdown rendering]
+
+### View Layer (Phase 2)
+- **Templates**: Depends on [Markdown rendering, link security]
+- **Run discovery**: Depends on [viewer.py core]
+
+### API Layer (Phase 3)
+- **API endpoints**: Depends on [run discovery, templates]
+
+</dependency-graph>
+
+---
+
+<implementation-roadmap>
+## Development Phases
+
+### Phase 0: Flask Foundation
+**Goal**: Set up basic Flask application
+
+**Entry Criteria**: Clean repository
+
+**Tasks**:
+- [ ] Initialize Flask app (depends on: none)
+  - Acceptance criteria: Flask app starts on localhost:5000
+  - Test strategy: Test GET /, verify response
+
+- [ ] Create base template (depends on: [Flask app])
+  - Acceptance criteria: Base HTML with header, nav, footer
+  - Test strategy: Render template, check structure
+
+**Exit Criteria**: Flask app running, base template renders
+
+**Delivers**: Web server foundation
+
+---
+
+### Phase 1: Markdown Rendering
+**Goal**: Render Markdown to HTML with security
+
+**Entry Criteria**: Phase 0 complete
+
+**Tasks**:
+- [ ] Implement Markdown to HTML (depends on: [Flask app])
+  - Acceptance criteria: Convert Markdown to HTML, support tables
+  - Test strategy: Test with various Markdown features
+
+- [ ] Add link conversion (depends on: [Markdown rendering])
+  - Acceptance criteria: Plain URLs become clickable links
+  - Test strategy: Test URL detection, <a> tag generation
+
+- [ ] Implement link security (depends on: [link conversion])
+  - Acceptance criteria: All links have target="_blank" rel="noopener noreferrer"
+  - Test strategy: Verify security attributes on all links
+
+**Exit Criteria**: Markdown rendered safely with clickable links
+
+**Delivers**: Secure Markdown rendering system
+
+---
+
+### Phase 2: Run Discovery and Views
+**Goal**: List runs and display content
+
+**Entry Criteria**: Phase 1 complete
+
+**Tasks**:
+- [ ] Implement run discovery (depends on: [Flask app])
+  - Acceptance criteria: List all runs, find latest
+  - Test strategy: Test with empty, single, multiple runs
+
+- [ ] Create index page (depends on: [run discovery, Markdown rendering])
+  - Acceptance criteria: Show latest run with rendered Markdown
+  - Test strategy: Test with various run states
+
+- [ ] Build run viewer (depends on: [run discovery, Markdown rendering])
+  - Acceptance criteria: View specific run by date
+  - Test strategy: Test /run/YYYY-MM-DD route
+
+- [ ] Add tabs view (depends on: [run viewer])
+  - Acceptance criteria: Tabs for parsed.md and summary.md
+  - Test strategy: Test tab switching, content display
+
+- [ ] Implement split view (depends on: [run viewer])
+  - Acceptance criteria: Side-by-side parsed vs summary
+  - Test strategy: Test layout, scrolling behavior
+
+**Exit Criteria**: Full run viewing with both view modes
+
+**Delivers**: Complete viewer interface
+
+---
+
+### Phase 3: API and Enhancement
+**Goal**: Add API endpoints and polish
+
+**Entry Criteria**: Phase 2 complete
+
+**Tasks**:
+- [ ] Create API endpoint (depends on: [run discovery])
+  - Acceptance criteria: GET /api/runs returns JSON
+  - Test strategy: Test JSON format, content
+
+- [ ] Add metrics display (depends on: [run viewer])
+  - Acceptance criteria: Show metrics.json and run.log
+  - Test strategy: Test with various metrics formats
+
+- [ ] Implement view toggle (depends on: [tabs view, split view])
+  - Acceptance criteria: Switch between tabs and split
+  - Test strategy: Test toggle functionality, state persistence
+
+**Exit Criteria**: Complete viewer with API
+
+**Delivers**: Production-ready web viewer
+
+</implementation-roadmap>
+
+---
+
+<test-strategy>
+## Test Pyramid
+
+```
+        /\
+       /E2E\       ← 15% (Full viewer workflow in browser)
+      /------\
+     /Integration\ ← 30% (Route handling, template rendering)
+    /------------\
+   /  Unit Tests  \ ← 55% (Markdown rendering, link security)
+  /----------------\
+```
+
+## Coverage Requirements
+- Line coverage: 85% minimum
+- Branch coverage: 80% minimum
+- Critical paths: 100% (link security, Markdown rendering)
+
+## Critical Test Scenarios
+
+### Markdown Rendering
+**Happy path**:
+- Markdown with tables, links, headers
+- Expected: Valid HTML, tables rendered, links clickable
+
+**Edge cases**:
+- Empty Markdown, no links, special characters
+- Expected: Handle gracefully, no broken HTML
+
+**Error cases**:
+- Malformed Markdown
+- Expected: Render what's possible, log errors
+
+### Link Security
+**Happy path**:
+- HTML with various link formats
+- Expected: All links have security attributes
+
+**Edge cases**:
+- Links with existing attributes, relative links
+- Expected: Add security attrs, preserve others
+
+### Run Discovery
+**Happy path**:
+- Multiple runs in directory
+- Expected: List all, sort by date, detect latest
+
+**Edge cases**:
+- Empty runs directory, invalid date formats
+- Expected: Return empty list, skip invalid
+
+**Error cases**:
+- Missing runs directory
+- Expected: Create directory, return empty list
+
+## Test Generation Guidelines
+- Use Flask test client for route testing
+- Mock file system for run discovery tests
+- Test Markdown rendering with real-world samples
+- Verify HTML structure with BeautifulSoup
+
+</test-strategy>
+
+---
+
+<architecture>
+## System Components
+- **Flask**: Web framework for HTTP server
+- **markdown**: Markdown to HTML conversion
+- **Jinja2**: Template engine (built into Flask)
+- **Static assets**: CSS, JavaScript for interactivity
+
+## Data Models
+
+```python
+RunMetadata = {
+    "date": str,            # YYYY-MM-DD
+    "path": str,            # Absolute path
+    "valid": bool,          # Has required files
+    "files": list[str]      # Available files
+}
+
+ViewerConfig = {
+    "host": str,            # Default: localhost
+    "port": int,            # Default: 5000
+    "debug": bool,          # Debug mode
+    "runs_dir": str         # Path to runs/
+}
+```
+
+## Technology Stack
+- **Flask>=3.0**: Web framework
+- **markdown>=3.5**: Markdown to HTML
+- **Jinja2**: Template engine (Flask dependency)
+- **CSS/JS**: Vanilla (no frameworks)
+
+**Decision: Flask vs FastAPI**
+- **Rationale**: Simple use case, Flask more lightweight
+- **Trade-offs**: No async support (not needed)
+- **Alternatives considered**: FastAPI (over-engineered)
+
+**Decision: Vanilla JS vs React**
+- **Rationale**: Simple interactivity, no build step
+- **Trade-offs**: Less dynamic, but simpler
+- **Alternatives considered**: React (too heavy)
+
+**Decision: Server-side rendering vs SPA**
+- **Rationale**: Better SEO, simpler deployment
+- **Trade-offs**: Page reloads on navigation (acceptable)
+- **Alternatives considered**: SPA (more complex)
+
+</architecture>
+
+---
+
+<risks>
+## Technical Risks
+**Risk**: Markdown rendering XSS vulnerabilities
+- **Impact**: High - security risk
+- **Likelihood**: Low - markdown library handles escaping
+- **Mitigation**: Use trusted markdown library, sanitize input
+- **Fallback**: Render as plain text
+
+**Risk**: Large Markdown files slow rendering
+- **Impact**: Medium - slow page loads
+- **Likelihood**: Medium
+- **Mitigation**: Paginate large tables, lazy loading
+- **Fallback**: Truncate display, link to full file
+
+## Dependency Risks
+**Risk**: Flask security vulnerabilities
+- **Impact**: High - web security risk
+- **Likelihood**: Low
+- **Mitigation**: Keep Flask updated, follow security practices
+- **Fallback**: Disable web viewer, use file access
+
+## Scope Risks
+**Risk**: Too many view modes increase complexity
+- **Impact**: Low - maintenance overhead
+- **Likelihood**: Low
+- **Mitigation**: Limit to tabs and split view
+- **Fallback**: Remove less-used modes
+
+**Risk**: Browser compatibility issues
+- **Impact**: Medium - some users can't view
+- **Likelihood**: Low - use standard HTML/CSS
+- **Mitigation**: Test on major browsers
+- **Fallback**: Provide plain HTML fallback
+
+</risks>
+
+---
+
+<appendix>
+## References
+- Flask: https://flask.palletsprojects.com/
+- markdown library: https://python-markdown.github.io/
+- OWASP link security: https://cheatsheetseries.owasp.org/
+
+## Glossary
+- **XSS**: Cross-Site Scripting - security vulnerability
+- **noopener**: Prevents new page from accessing window.opener
+- **noreferrer**: Prevents referrer header from being sent
+- **Split view**: Side-by-side layout for comparison
+
+## Open Questions
+- Should we add search functionality?
+- Export to PDF option?
+- User authentication for sensitive runs?
+- Dark mode theme?
+</appendix>

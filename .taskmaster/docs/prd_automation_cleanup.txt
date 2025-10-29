@@ -1,0 +1,493 @@
+# Automation and Cleanup PRD
+
+<overview>
+## Problem Statement
+Weekly aggregation needs reliable scheduling and automatic cleanup. Manual execution is error-prone, and old runs/logs consume disk space. The system needs automated recurring runs and intelligent data retention.
+
+## Target Users
+- System administrators setting up automated weekly runs
+- DevOps teams managing disk space
+- Users wanting hands-off operation
+- Compliance teams requiring data retention policies
+
+## Success Metrics
+- Scheduler 99.9% uptime for weekly runs
+- Automatic cleanup of runs older than 90 days
+- Log retention limited to 45 days
+- Cache purged of entries older than 21 days
+- Pipeline integrity checks pass 100% of valid runs
+</overview>
+
+---
+
+<functional-decomposition>
+## Capability Tree
+
+### Capability: Job Scheduling
+Automated recurring execution
+
+#### Feature: Schedule Configuration
+- **Description**: Configure recurring run schedule
+- **Inputs**: Day of week, hour, minute, timezone
+- **Outputs**: Scheduler configuration
+- **Behavior**: Parse schedule params, validate, create schedule object
+
+#### Feature: Recurring Job
+- **Description**: Execute aggregator on schedule
+- **Inputs**: Schedule config, CLI args
+- **Outputs**: Run execution result
+- **Behavior**: Trigger index.py with configured args at scheduled time
+
+#### Feature: Scheduler Daemon
+- **Description**: Long-running process for scheduling
+- **Inputs**: Schedule config
+- **Outputs**: Running scheduler
+- **Behavior**: Use APScheduler, run in background, persist state
+
+#### Feature: Job History
+- **Description**: Track scheduled run history
+- **Inputs**: Job execution events
+- **Outputs**: Log of executions
+- **Behavior**: Record start time, end time, result, errors
+
+#### Feature: Failure Handling
+- **Description**: Handle job execution failures
+- **Inputs**: Job exception
+- **Outputs**: Error log, retry decision
+- **Behavior**: Log error, optionally retry, alert on repeated failures
+
+### Capability: Data Cleanup
+Automated retention and archival
+
+#### Feature: Run Cleanup
+- **Description**: Remove runs older than retention period
+- **Inputs**: Retention days (default: 90)
+- **Outputs**: List of deleted runs
+- **Behavior**: Scan runs/, check age, delete old directories
+
+#### Feature: Log Cleanup
+- **Description**: Remove old log files
+- **Inputs**: Retention days (default: 45)
+- **Outputs**: List of deleted logs
+- **Behavior**: Scan logs/, check age, delete old files
+
+#### Feature: Cache Cleanup
+- **Description**: Purge stale cache entries
+- **Inputs**: TTL days (default: 21)
+- **Outputs**: Count of purged entries
+- **Behavior**: Query cache DB, delete entries older than TTL
+
+#### Feature: Archive Compression
+- **Description**: Compress old runs before deletion
+- **Inputs**: Run directory
+- **Outputs**: Compressed archive
+- **Behavior**: Create .tar.gz of run, verify, delete original
+
+#### Feature: Cleanup Scheduling
+- **Description**: Run cleanup automatically
+- **Inputs**: Cleanup frequency
+- **Outputs**: Scheduled cleanup job
+- **Behavior**: Run daily/weekly cleanup, log results
+
+### Capability: Pipeline Integrity
+Verify run completeness and correctness
+
+#### Feature: Output Verification
+- **Description**: Verify all expected outputs exist
+- **Inputs**: Run directory
+- **Outputs**: Boolean (complete/incomplete)
+- **Behavior**: Check for parsed.md, summary.md, sources.json, etc.
+
+#### Feature: Schema Validation
+- **Description**: Validate JSON outputs against schemas
+- **Inputs**: Run outputs
+- **Outputs**: Boolean (valid/invalid) + errors
+- **Behavior**: Validate sources.json, metrics.json, validation_report.json
+
+#### Feature: Link Verification
+- **Description**: Verify all reports have source links
+- **Inputs**: Markdown files
+- **Outputs**: Boolean (has links/missing links)
+- **Behavior**: Parse Markdown, count [source](...) patterns
+
+#### Feature: Integrity Report
+- **Description**: Generate integrity check report
+- **Inputs**: Verification results
+- **Outputs**: Integrity status + details
+- **Behavior**: Aggregate checks, determine pass/fail
+
+#### Feature: Exit Code Mapping
+- **Description**: Set appropriate exit codes for failures
+- **Inputs**: Failure type
+- **Outputs**: Exit code (0-50)
+- **Behavior**: Map: 0=success, 10=partial, 20=validation, 30=summarizer, 40=email, 50=integrity
+
+</functional-decomposition>
+
+---
+
+<structural-decomposition>
+## Repository Structure
+
+```
+drupal-weekly/
+├── src/
+│   ├── scheduler.py           # Job scheduling capability
+│   ├── data_cleaner.py        # Data cleanup capability
+│   └── pipeline_integrity.py  # Pipeline integrity capability
+├── .scheduler/
+│   └── state.json            # Scheduler state
+└── runs/
+    └── YYYY-MM-DD/
+```
+
+## Module Definitions
+
+### Module: scheduler
+- **Maps to capability**: Job Scheduling
+- **Responsibility**: Automated recurring execution
+- **Exports**:
+  - `start_scheduler(config)` - Start scheduler daemon
+  - `schedule_job(day, hour, minute, args)` - Configure recurring job
+  - `run_job(args)` - Execute aggregator
+  - `get_history()` - Return job execution history
+
+### Module: data_cleaner
+- **Maps to capability**: Data Cleanup
+- **Responsibility**: Retention and archival
+- **Exports**:
+  - `cleanup_runs(retention_days)` - Remove old runs
+  - `cleanup_logs(retention_days)` - Remove old logs
+  - `cleanup_cache(ttl_days)` - Purge stale cache
+  - `compress_archive(run_dir)` - Compress run
+  - `schedule_cleanup(frequency)` - Automate cleanup
+
+### Module: pipeline_integrity
+- **Maps to capability**: Pipeline Integrity
+- **Responsibility**: Verify run completeness
+- **Exports**:
+  - `verify_run(run_dir)` - Check run integrity
+  - `verify_outputs(run_dir)` - Check files exist
+  - `verify_schemas(run_dir)` - Validate JSON schemas
+  - `verify_links(markdown_files)` - Check source links
+  - `get_exit_code(failure_type)` - Map failure to exit code
+
+</structural-decomposition>
+
+---
+
+<dependency-graph>
+## Dependency Chain
+
+### Foundation Layer (Phase 0)
+No dependencies - these are built first.
+
+- **pipeline_integrity**: Verification logic (no dependencies)
+
+### Cleanup Layer (Phase 1)
+- **data_cleaner**: Depends on [pipeline_integrity] (verify before delete)
+
+### Scheduling Layer (Phase 2)
+- **scheduler**: Depends on [data_cleaner, pipeline_integrity]
+
+</dependency-graph>
+
+---
+
+<implementation-roadmap>
+## Development Phases
+
+### Phase 0: Pipeline Integrity
+**Goal**: Verify run completeness and correctness
+
+**Entry Criteria**: Clean repository
+
+**Tasks**:
+- [ ] Implement output verification (depends on: none)
+  - Acceptance criteria: Check all required files exist
+  - Test strategy: Test with complete/incomplete runs
+
+- [ ] Add schema validation (depends on: [output verification])
+  - Acceptance criteria: Validate JSON files against schemas
+  - Test strategy: Test with valid/invalid JSON
+
+- [ ] Create link verification (depends on: [output verification])
+  - Acceptance criteria: Verify Markdown has source links
+  - Test strategy: Test with various Markdown formats
+
+- [ ] Build integrity reporter (depends on: [all verifications])
+  - Acceptance criteria: Generate integrity report
+  - Test strategy: Test with various failure scenarios
+
+- [ ] Implement exit code mapping (depends on: [integrity reporter])
+  - Acceptance criteria: Correct exit codes for each failure type
+  - Test strategy: Verify exit codes match spec
+
+**Exit Criteria**: Integrity verification working end-to-end
+
+**Delivers**: Run verification system
+
+---
+
+### Phase 1: Data Cleanup
+**Goal**: Automated retention and archival
+
+**Entry Criteria**: Phase 0 complete
+
+**Tasks**:
+- [ ] Implement run cleanup (depends on: [pipeline_integrity])
+  - Acceptance criteria: Delete runs older than retention period
+  - Test strategy: Test with various run ages
+
+- [ ] Add log cleanup (depends on: [run cleanup])
+  - Acceptance criteria: Delete logs older than retention period
+  - Test strategy: Test with various log ages
+
+- [ ] Create cache cleanup (depends on: none)
+  - Acceptance criteria: Purge cache entries by TTL
+  - Test strategy: Test with various cache ages
+
+- [ ] Build archive compression (depends on: [run cleanup])
+  - Acceptance criteria: Compress run before deletion
+  - Test strategy: Test compression, verify integrity
+
+- [ ] Add cleanup automation (depends on: [all cleanup tasks])
+  - Acceptance criteria: Schedule cleanup to run automatically
+  - Test strategy: Test scheduled execution
+
+**Exit Criteria**: Automatic cleanup operational
+
+**Delivers**: Self-maintaining data retention
+
+---
+
+### Phase 2: Job Scheduling
+**Goal**: Automated recurring execution
+
+**Entry Criteria**: Phase 1 complete
+
+**Tasks**:
+- [ ] Implement scheduler daemon (depends on: none)
+  - Acceptance criteria: Long-running APScheduler process
+  - Test strategy: Test daemon start/stop, state persistence
+
+- [ ] Add schedule configuration (depends on: [scheduler daemon])
+  - Acceptance criteria: Configure day, hour, minute, timezone
+  - Test strategy: Test various schedule configurations
+
+- [ ] Create recurring job (depends on: [scheduler daemon, data_cleaner, pipeline_integrity])
+  - Acceptance criteria: Execute aggregator on schedule
+  - Test strategy: Test job execution, verify runs created
+
+- [ ] Implement job history (depends on: [recurring job])
+  - Acceptance criteria: Track execution history
+  - Test strategy: Verify history persistence, retrieval
+
+- [ ] Add failure handling (depends on: [recurring job])
+  - Acceptance criteria: Log errors, retry on transient failures
+  - Test strategy: Test with various failure scenarios
+
+**Exit Criteria**: Fully automated scheduling
+
+**Delivers**: Hands-off weekly operation
+
+</implementation-roadmap>
+
+---
+
+<test-strategy>
+## Test Pyramid
+
+```
+        /\
+       /E2E\       ← 5% (Full scheduled run + cleanup)
+      /------\
+     /Integration\ ← 30% (Scheduler + cleanup interaction)
+    /------------\
+   /  Unit Tests  \ ← 65% (File age checks, integrity verification)
+  /----------------\
+```
+
+## Coverage Requirements
+- Line coverage: 90% minimum
+- Branch coverage: 85% minimum
+- Critical paths: 100% (integrity checks, cleanup logic)
+
+## Critical Test Scenarios
+
+### Pipeline Integrity
+**Happy path**:
+- Complete run with all files and valid schemas
+- Expected: Pass integrity check, exit code 0
+
+**Failure paths**:
+- Missing files, invalid JSON, no source links
+- Expected: Fail with specific error, correct exit code
+
+### Data Cleanup
+**Happy path**:
+- Runs/logs older than retention period
+- Expected: Delete old data, keep recent
+
+**Edge cases**:
+- Runs at boundary (exactly retention days old)
+- Expected: Keep runs at boundary, delete older
+
+**Error cases**:
+- Permission denied, disk full
+- Expected: Log error, continue with deletable items
+
+### Scheduler
+**Happy path**:
+- Schedule job for specific time
+- Expected: Execute at scheduled time, create run
+
+**Edge cases**:
+- Scheduler restart, missed execution
+- Expected: Catch up or skip based on config
+
+**Error cases**:
+- Job execution failure, repeated failures
+- Expected: Log error, retry transient failures, alert on persistent
+
+## Test Generation Guidelines
+- Mock time for scheduler tests (avoid waiting)
+- Use temporary directories for cleanup tests
+- Mock file operations for permission tests
+- Test integrity checks with real run samples
+
+</test-strategy>
+
+---
+
+<architecture>
+## System Components
+- **APScheduler**: Cron-like job scheduling
+- **tarfile**: Archive compression (stdlib)
+- **pathlib**: File system operations (stdlib)
+- **time/datetime**: Time-based operations
+
+## Data Models
+
+```python
+ScheduleConfig = {
+    "day": str,             # "monday", "friday", etc.
+    "hour": int,            # 0-23
+    "minute": int,          # 0-59
+    "timezone": str,        # "Europe/Athens"
+    "args": dict            # CLI args for index.py
+}
+
+CleanupConfig = {
+    "run_retention_days": int,      # Default: 90
+    "log_retention_days": int,      # Default: 45
+    "cache_ttl_days": int,          # Default: 21
+    "compress_before_delete": bool  # Default: true
+}
+
+IntegrityReport = {
+    "run_dir": str,
+    "outputs_present": bool,
+    "schemas_valid": bool,
+    "links_present": bool,
+    "passed": bool,
+    "errors": list[str]
+}
+
+ExitCodes = {
+    0: "Success",
+    10: "Partial fetch failure",
+    20: "Validation failed",
+    30: "Summarizer failed",
+    40: "Email failure",
+    50: "Integrity check failed"
+}
+```
+
+## Technology Stack
+- **apscheduler>=3.10**: Job scheduling
+- **tarfile**: Archive compression (stdlib)
+- **pathlib**: Modern file operations
+- **datetime + pytz**: Time handling
+
+**Decision: APScheduler vs cron**
+- **Rationale**: Cross-platform, programmatic control, state persistence
+- **Trade-offs**: Python dependency vs OS feature
+- **Alternatives considered**: cron (platform-specific)
+
+**Decision: Compression before deletion**
+- **Rationale**: Preserve data for compliance/auditing
+- **Trade-offs**: Additional disk space temporarily
+- **Alternatives considered**: Delete immediately (data loss)
+
+**Decision: Exit code strategy**
+- **Rationale**: Clear failure categorization for monitoring
+- **Trade-offs**: Need to define code ranges
+- **Alternatives considered**: Boolean success/fail (less granular)
+
+</architecture>
+
+---
+
+<risks>
+## Technical Risks
+**Risk**: Scheduler daemon crashes
+- **Impact**: High - no automated runs
+- **Likelihood**: Medium
+- **Mitigation**: State persistence, auto-restart, monitoring
+- **Fallback**: Manual execution, cron fallback
+
+**Risk**: Cleanup deletes important data
+- **Impact**: High - data loss
+- **Likelihood**: Low
+- **Mitigation**: Compression before delete, dry-run mode, backups
+- **Fallback**: Restore from backups
+
+**Risk**: Integrity checks false positives
+- **Impact**: Medium - valid runs marked failed
+- **Likelihood**: Low
+- **Mitigation**: Comprehensive tests, validation reports
+- **Fallback**: Manual review
+
+## Dependency Risks
+**Risk**: APScheduler incompatibility
+- **Impact**: High - scheduler breaks
+- **Likelihood**: Low
+- **Mitigation**: Pin version, test on updates
+- **Fallback**: Fall back to cron
+
+## Scope Risks
+**Risk**: Too aggressive cleanup
+- **Impact**: Medium - lose useful historical data
+- **Likelihood**: Medium
+- **Mitigation**: Configurable retention, warnings
+- **Fallback**: Increase retention periods
+
+**Risk**: Scheduler complexity grows
+- **Impact**: Medium - harder to maintain
+- **Likelihood**: Low
+- **Mitigation**: Keep simple, document well
+- **Fallback**: Remove scheduler, use cron
+
+</risks>
+
+---
+
+<appendix>
+## References
+- APScheduler: https://apscheduler.readthedocs.io/
+- Exit codes: https://www.gnu.org/software/bash/manual/html_node/Exit-Status.html
+- Cron syntax: https://en.wikipedia.org/wiki/Cron
+
+## Glossary
+- **Daemon**: Long-running background process
+- **Retention**: How long to keep data before deletion
+- **TTL**: Time-to-live - data validity period
+- **Integrity check**: Verification of data completeness and correctness
+
+## Open Questions
+- Should we support multiple schedules (daily + weekly)?
+- Email alerts on cleanup?
+- Configurable archival strategies (compression level)?
+- Integration with monitoring systems (Prometheus, etc.)?
+</appendix>

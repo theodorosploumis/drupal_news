@@ -1,0 +1,572 @@
+# AI Provider Integration PRD
+
+<overview>
+## Problem Statement
+Summarizing weekly Drupal updates requires AI models, but users have different preferences (cloud vs local, cost vs quality). The system needs pluggable AI provider support with automatic fallback and consistent output format across all providers.
+
+## Target Users
+- Developers preferring cloud AI (OpenAI, Anthropic, Gemini)
+- Users wanting local inference (Ollama, LM Studio)
+- Cost-conscious users (cheaper models via OpenRouter)
+- Users with specific model access (Qwen, Grok, DeepSeek)
+
+## Success Metrics
+- Support 9+ AI providers
+- Consistent Markdown output with source links from all providers
+- Automatic fallback chain: openai → anthropic → ollama → qwen → openrouter
+- Token usage and cost tracking per run
+- < 5% summarization failures
+</overview>
+
+---
+
+<functional-decomposition>
+## Capability Tree
+
+### Capability: Provider Management
+Load and configure AI provider clients
+
+#### Feature: Provider Registry
+- **Description**: Central registry of available AI providers
+- **Inputs**: providers.yaml config
+- **Outputs**: Map of provider name → client module
+- **Behavior**: Load provider configs, validate API keys, register clients
+
+#### Feature: Dynamic Provider Loading
+- **Description**: Import provider client modules at runtime
+- **Inputs**: Provider name string
+- **Outputs**: Initialized provider client instance
+- **Behavior**: Dynamic import from src/utils/providers/, pass config
+
+#### Feature: Provider Fallback Chain
+- **Description**: Attempt providers in order until success
+- **Inputs**: Primary provider, fallback list
+- **Outputs**: Successful provider or error
+- **Behavior**: Try primary, iterate fallbacks on failure, log attempts
+
+### Capability: AI Client Abstraction
+Unified interface for all AI providers
+
+#### Feature: Base Client Interface
+- **Description**: Abstract base class for provider clients
+- **Inputs**: Provider config (API key, model, temperature)
+- **Outputs**: Initialized client
+- **Behavior**: Define summarize() interface, validate config
+
+#### Feature: Prompt Management
+- **Description**: Build consistent prompts for all providers
+- **Inputs**: Raw items list, timeframe, timezone
+- **Outputs**: Formatted prompt string
+- **Behavior**: Template with context, items table, requirements
+
+#### Feature: Response Normalization
+- **Description**: Normalize provider responses to standard format
+- **Inputs**: Raw provider response
+- **Outputs**: Markdown string with source links
+- **Behavior**: Extract text, validate format, ensure source links
+
+### Capability: Cloud Provider Clients
+Implementations for cloud-based AI services
+
+#### Feature: OpenAI Client
+- **Description**: OpenAI API integration (GPT-4, GPT-4.1-mini)
+- **Inputs**: API key, model, temperature
+- **Outputs**: Summary text
+- **Behavior**: Use official openai SDK, handle streaming, track tokens
+
+#### Feature: Anthropic Client
+- **Description**: Anthropic Claude API integration
+- **Inputs**: API key, model (Claude 3.5 Sonnet), temperature
+- **Outputs**: Summary text
+- **Behavior**: Use anthropic SDK, handle max_tokens, track usage
+
+#### Feature: Gemini Client
+- **Description**: Google Gemini API integration
+- **Inputs**: API key, model (Gemini 1.5 Pro), temperature
+- **Outputs**: Summary text
+- **Behavior**: Use google-generativeai SDK, handle safety settings
+
+#### Feature: Grok Client
+- **Description**: xAI Grok API integration
+- **Inputs**: API key, model (grok-beta), temperature
+- **Outputs**: Summary text
+- **Behavior**: Use xai-sdk, handle rate limits
+
+#### Feature: DeepSeek Client
+- **Description**: DeepSeek API integration
+- **Inputs**: API key, model (deepseek-chat), temperature
+- **Outputs**: Summary text
+- **Behavior**: Use deepseek SDK, track tokens
+
+#### Feature: OpenRouter Client
+- **Description**: OpenRouter multi-model API integration
+- **Inputs**: API key, model (any OpenRouter model), temperature
+- **Outputs**: Summary text
+- **Behavior**: Use OpenRouter API, support model selection
+
+### Capability: Local Provider Clients
+Implementations for locally-hosted AI models
+
+#### Feature: Ollama Client
+- **Description**: Ollama local inference integration
+- **Inputs**: Base URL, model name, temperature
+- **Outputs**: Summary text
+- **Behavior**: HTTP API to localhost:11434, handle streaming
+
+#### Feature: LM Studio Client
+- **Description**: LM Studio local inference integration
+- **Inputs**: Base URL, model name, temperature
+- **Outputs**: Summary text
+- **Behavior**: OpenAI-compatible API to localhost:1234
+
+#### Feature: Qwen Client
+- **Description**: Alibaba Qwen API integration
+- **Inputs**: API key, model (qwen2.5-7b-chat), temperature
+- **Outputs**: Summary text
+- **Behavior**: Use dashscope SDK, handle rate limits
+
+### Capability: Summarization Orchestration
+High-level summarization logic
+
+#### Feature: Chunk Management
+- **Description**: Split large item lists into manageable chunks
+- **Inputs**: Items list, max items per chunk
+- **Outputs**: List of item chunks
+- **Behavior**: Split if > 200 items, maintain context across chunks
+
+#### Feature: Summary Generation
+- **Description**: Coordinate AI calls and merge results
+- **Inputs**: Items, provider, model, timezone, days
+- **Outputs**: Final Markdown summary
+- **Behavior**: Build prompt, call provider, validate output, track metrics
+
+#### Feature: Output Validation
+- **Description**: Ensure AI output meets requirements
+- **Inputs**: Raw AI response
+- **Outputs**: Valid Markdown or error
+- **Behavior**: Check for [source](...) links, verify format, detect truncation
+
+#### Feature: Cost Tracking
+- **Description**: Calculate and log token usage and costs
+- **Inputs**: Provider, model, token count
+- **Outputs**: Cost in USD, logged metrics
+- **Behavior**: Use provider pricing table, calculate input/output costs
+
+</functional-decomposition>
+
+---
+
+<structural-decomposition>
+## Repository Structure
+
+```
+drupal-weekly/
+├── src/
+│   ├── ai_summarizer.py        # Summarization orchestration
+│   └── utils/
+│       └── providers/
+│           ├── base_client.py         # Abstract base
+│           ├── openai_client.py       # OpenAI
+│           ├── anthropic_client.py    # Anthropic
+│           ├── gemini_client.py       # Google Gemini
+│           ├── ollama_client.py       # Ollama
+│           ├── lmstudio_client.py     # LM Studio
+│           ├── qwen_client.py         # Alibaba Qwen
+│           ├── grok_client.py         # xAI Grok
+│           ├── deepseek_client.py     # DeepSeek
+│           └── openrouter_client.py   # OpenRouter
+├── providers.yaml               # Provider configurations
+└── .env                        # API keys
+```
+
+## Module Definitions
+
+### Module: ai_summarizer
+- **Maps to capability**: Summarization Orchestration, Provider Management
+- **Responsibility**: Coordinate AI summarization with provider fallback
+- **Exports**:
+  - `summarize(items, provider, model, tz, days)` - Generate summary
+  - `load_provider(name)` - Load provider client
+  - `build_prompt(items, tz, days)` - Create prompt
+  - `validate_output(text)` - Check output format
+  - `track_cost(provider, model, tokens)` - Calculate costs
+
+### Module: utils/providers/base_client
+- **Maps to capability**: AI Client Abstraction
+- **Responsibility**: Define provider interface
+- **Exports**:
+  - `BaseAIClient` - Abstract base class
+  - `summarize(prompt)` - Interface method
+
+### Module: utils/providers/openai_client
+- **Maps to capability**: Cloud Provider Clients
+- **Responsibility**: OpenAI API integration
+- **Exports**:
+  - `OpenAIClient(config)` - OpenAI client
+  - `summarize(prompt)` - Generate summary via GPT
+
+### Module: utils/providers/anthropic_client
+- **Maps to capability**: Cloud Provider Clients
+- **Responsibility**: Anthropic API integration
+- **Exports**:
+  - `AnthropicClient(config)` - Claude client
+  - `summarize(prompt)` - Generate summary via Claude
+
+### Module: utils/providers/gemini_client
+- **Maps to capability**: Cloud Provider Clients
+- **Responsibility**: Google Gemini integration
+- **Exports**:
+  - `GeminiClient(config)` - Gemini client
+  - `summarize(prompt)` - Generate summary via Gemini
+
+### Module: utils/providers/ollama_client
+- **Maps to capability**: Local Provider Clients
+- **Responsibility**: Ollama local inference
+- **Exports**:
+  - `OllamaClient(config)` - Ollama client
+  - `summarize(prompt)` - Generate summary via Ollama
+
+### Module: utils/providers/lmstudio_client
+- **Maps to capability**: Local Provider Clients
+- **Responsibility**: LM Studio local inference
+- **Exports**:
+  - `LMStudioClient(config)` - LM Studio client
+  - `summarize(prompt)` - Generate summary via LM Studio
+
+### Module: utils/providers/qwen_client
+- **Maps to capability**: Cloud Provider Clients
+- **Responsibility**: Alibaba Qwen integration
+- **Exports**:
+  - `QwenClient(config)` - Qwen client
+  - `summarize(prompt)` - Generate summary via Qwen
+
+### Module: utils/providers/grok_client
+- **Maps to capability**: Cloud Provider Clients
+- **Responsibility**: xAI Grok integration
+- **Exports**:
+  - `GrokClient(config)` - Grok client
+  - `summarize(prompt)` - Generate summary via Grok
+
+### Module: utils/providers/deepseek_client
+- **Maps to capability**: Cloud Provider Clients
+- **Responsibility**: DeepSeek integration
+- **Exports**:
+  - `DeepSeekClient(config)` - DeepSeek client
+  - `summarize(prompt)` - Generate summary via DeepSeek
+
+### Module: utils/providers/openrouter_client
+- **Maps to capability**: Cloud Provider Clients
+- **Responsibility**: OpenRouter multi-model integration
+- **Exports**:
+  - `OpenRouterClient(config)` - OpenRouter client
+  - `summarize(prompt)` - Generate summary via any OpenRouter model
+
+</structural-decomposition>
+
+---
+
+<dependency-graph>
+## Dependency Chain
+
+### Foundation Layer (Phase 0)
+No dependencies - these are built first.
+
+- **utils/providers/base_client**: Abstract interface for providers
+
+### Provider Layer (Phase 1)
+All provider clients depend only on base client
+
+- **utils/providers/openai_client**: Depends on [base_client]
+- **utils/providers/anthropic_client**: Depends on [base_client]
+- **utils/providers/gemini_client**: Depends on [base_client]
+- **utils/providers/ollama_client**: Depends on [base_client]
+- **utils/providers/lmstudio_client**: Depends on [base_client]
+- **utils/providers/qwen_client**: Depends on [base_client]
+- **utils/providers/grok_client**: Depends on [base_client]
+- **utils/providers/deepseek_client**: Depends on [base_client]
+- **utils/providers/openrouter_client**: Depends on [base_client]
+
+### Orchestration Layer (Phase 2)
+- **ai_summarizer**: Depends on [base_client, all provider clients]
+
+</dependency-graph>
+
+---
+
+<implementation-roadmap>
+## Development Phases
+
+### Phase 0: Base Provider Interface
+**Goal**: Define abstract provider interface
+
+**Entry Criteria**: Clean repository
+
+**Tasks**:
+- [ ] Create base AI client interface (depends on: none)
+  - Acceptance criteria: Abstract class with summarize() method
+  - Test strategy: Verify subclasses must implement interface
+
+**Exit Criteria**: Base client class importable
+
+**Delivers**: Foundation for all provider implementations
+
+---
+
+### Phase 1: Provider Implementations
+**Goal**: Implement all 9 AI provider clients
+
+**Entry Criteria**: Phase 0 complete
+
+**Tasks**:
+- [ ] Implement OpenAI client (depends on: [base_client])
+  - Acceptance criteria: Call OpenAI API, return summary
+  - Test strategy: Mock API responses, test token tracking
+
+- [ ] Implement Anthropic client (depends on: [base_client])
+  - Acceptance criteria: Call Claude API, handle max_tokens
+  - Test strategy: Mock API, verify response parsing
+
+- [ ] Implement Gemini client (depends on: [base_client])
+  - Acceptance criteria: Call Gemini API, handle safety settings
+  - Test strategy: Mock API, test content filtering
+
+- [ ] Implement Ollama client (depends on: [base_client])
+  - Acceptance criteria: Call local Ollama API
+  - Test strategy: Mock localhost:11434, test streaming
+
+- [ ] Implement LM Studio client (depends on: [base_client])
+  - Acceptance criteria: Call local LM Studio API
+  - Test strategy: Mock localhost:1234, OpenAI-compatible format
+
+- [ ] Implement Qwen client (depends on: [base_client])
+  - Acceptance criteria: Call Qwen API via dashscope
+  - Test strategy: Mock API, test rate limiting
+
+- [ ] Implement Grok client (depends on: [base_client])
+  - Acceptance criteria: Call xAI Grok API
+  - Test strategy: Mock API, verify format
+
+- [ ] Implement DeepSeek client (depends on: [base_client])
+  - Acceptance criteria: Call DeepSeek API
+  - Test strategy: Mock API, test token tracking
+
+- [ ] Implement OpenRouter client (depends on: [base_client])
+  - Acceptance criteria: Call OpenRouter with any model
+  - Test strategy: Mock API, test model selection
+
+**Exit Criteria**: All 9 providers work independently
+
+**Delivers**: Complete provider client library
+
+---
+
+### Phase 2: Summarization Orchestration
+**Goal**: Coordinate providers with fallback and validation
+
+**Entry Criteria**: Phase 1 complete
+
+**Tasks**:
+- [ ] Build provider registry and loader (depends on: [all provider clients])
+  - Acceptance criteria: Load provider by name, handle missing keys
+  - Test strategy: Test with valid/invalid provider names
+
+- [ ] Implement fallback chain (depends on: [provider loader])
+  - Acceptance criteria: Try primary, fall back on failure
+  - Test strategy: Mock provider failures, verify fallback order
+
+- [ ] Create prompt builder (depends on: none)
+  - Acceptance criteria: Format items table, add context
+  - Test strategy: Test with various item counts and formats
+
+- [ ] Add output validation (depends on: none)
+  - Acceptance criteria: Verify [source](...) presence, detect truncation
+  - Test strategy: Test with valid/invalid AI outputs
+
+- [ ] Implement cost tracking (depends on: [all providers])
+  - Acceptance criteria: Calculate token costs per provider/model
+  - Test strategy: Verify pricing calculations for each provider
+
+- [ ] Add chunk management (depends on: [ai_summarizer core])
+  - Acceptance criteria: Split > 200 items, merge summaries
+  - Test strategy: Test with 50, 200, 500 item lists
+
+**Exit Criteria**: End-to-end summarization with any provider
+
+**Delivers**: Complete AI summarization system with fallback
+
+</implementation-roadmap>
+
+---
+
+<test-strategy>
+## Test Pyramid
+
+```
+        /\
+       /E2E\       ← 5% (Full summarization with live APIs)
+      /------\
+     /Integration\ ← 25% (Provider loading, fallback chain)
+    /------------\
+   /  Unit Tests  \ ← 70% (Mock API calls, prompt building)
+  /----------------\
+```
+
+## Coverage Requirements
+- Line coverage: 90% minimum
+- Branch coverage: 85% minimum
+- All provider clients: 100% coverage (critical path)
+
+## Critical Test Scenarios
+
+### Provider Clients
+**Happy path**:
+- Call provider with valid prompt, receive summary
+- Expected: Markdown text with source links
+
+**Edge cases**:
+- Empty prompt, very long prompt (> 100k chars)
+- Expected: Handle gracefully, truncate if needed
+
+**Error cases**:
+- Invalid API key, rate limit, network timeout
+- Expected: Raise specific error, allow fallback
+
+### Fallback Chain
+**Happy path**:
+- Primary provider succeeds
+- Expected: Use primary, skip fallbacks
+
+**Failure path**:
+- Primary fails, first fallback succeeds
+- Expected: Try primary, fall back to next, log attempts
+
+**Total failure**:
+- All providers fail
+- Expected: Raise error with all failure reasons
+
+### Output Validation
+**Happy path**:
+- Markdown with multiple [source](...) links
+- Expected: Pass validation
+
+**Failure cases**:
+- No source links, truncated output, invalid Markdown
+- Expected: Fail validation, log specific issue
+
+## Test Generation Guidelines
+- Mock all external API calls (no live API calls in CI)
+- Test each provider independently
+- Test fallback chain with various failure scenarios
+- Verify cost calculations match provider pricing
+
+</test-strategy>
+
+---
+
+<architecture>
+## System Components
+- **Provider Registry**: Dynamic module loading based on config
+- **Base Client**: Abstract interface enforcing consistent API
+- **Individual Clients**: One module per provider, isolated dependencies
+- **Orchestrator**: Coordinates providers, handles fallback
+
+## Data Models
+
+```python
+ProviderConfig = {
+    "client": str,          # Module name
+    "model": str,           # Model identifier
+    "temperature": float    # 0.0 - 1.0
+}
+
+SummarizationResult = {
+    "summary": str,         # Markdown text
+    "provider": str,        # Which provider succeeded
+    "model": str,           # Model used
+    "tokens": int,          # Token count
+    "cost_usd": float       # Estimated cost
+}
+```
+
+## Technology Stack
+- **OpenAI**: openai>=1.45 SDK
+- **Anthropic**: anthropic>=0.34 SDK
+- **Google**: google-generativeai>=0.7 SDK
+- **Qwen**: dashscope>=1.17 SDK
+- **Grok**: xai-sdk>=0.3
+- **DeepSeek**: deepseek>=0.2
+- **Ollama/LM Studio**: Direct HTTP (httpx)
+- **OpenRouter**: Direct HTTP API
+
+**Decision: Individual SDKs vs unified wrapper**
+- **Rationale**: Use official SDKs where available for reliability
+- **Trade-offs**: More dependencies, but better error handling
+- **Alternatives considered**: Unified HTTP client (less reliable)
+
+**Decision: Fallback chain order**
+- **Rationale**: openai → anthropic → ollama → qwen → openrouter
+- Order prioritizes reliability > quality > cost
+- **Trade-offs**: May not pick cheapest first
+- **Alternatives considered**: Cost-based order (less reliable)
+
+</architecture>
+
+---
+
+<risks>
+## Technical Risks
+**Risk**: API key management across 9 providers
+- **Impact**: High - missing keys break functionality
+- **Likelihood**: Medium
+- **Mitigation**: Validate keys on startup, clear error messages
+- **Fallback**: Auto-skip providers with missing keys
+
+**Risk**: Provider API changes
+- **Impact**: High - could break integration
+- **Likelihood**: Medium
+- **Mitigation**: Pin SDK versions, monitor deprecations
+- **Fallback**: Use HTTP fallback for broken SDKs
+
+**Risk**: Inconsistent output formats across providers
+- **Impact**: Medium - validation failures
+- **Likelihood**: High - models interpret prompts differently
+- **Mitigation**: Strong output validation, prompt engineering
+- **Fallback**: Retry with more explicit prompt
+
+## Dependency Risks
+**Risk**: SDK installation failures
+- **Impact**: Medium - provider unavailable
+- **Likelihood**: Low
+- **Mitigation**: Mark SDKs as optional in requirements
+- **Fallback**: Skip providers with missing SDKs
+
+## Scope Risks
+**Risk**: Adding too many providers increases complexity
+- **Impact**: Medium - more code to maintain
+- **Likelihood**: Low - 9 providers is current scope
+- **Mitigation**: Strict provider interface, shared tests
+- **Fallback**: Remove low-usage providers
+
+</risks>
+
+---
+
+<appendix>
+## References
+- OpenAI API: https://platform.openai.com/docs/api-reference
+- Anthropic API: https://docs.anthropic.com/claude/reference
+- Gemini API: https://ai.google.dev/docs
+- Ollama API: https://ollama.ai/docs/api
+- OpenRouter API: https://openrouter.ai/docs
+
+## Glossary
+- **Provider**: AI service offering text generation
+- **Fallback chain**: Ordered list of providers to try on failure
+- **Token**: Unit of text processing (roughly 4 chars)
+- **Temperature**: Model creativity parameter (0.0-1.0)
+
+## Open Questions
+- Should we support custom provider plugins?
+- How to handle multi-turn conversations for refinement?
+- Cost limits per run?
+</appendix>

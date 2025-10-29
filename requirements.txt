@@ -15,6 +15,8 @@ pyyaml>=6.0
 flask>=3.0
 markdown>=3.5
 weasyprint>=66.0
+libsass>=0.23
+watchdog>=4.0
 
 # Optional AI SDKs - install as needed
 # openai>=1.45

@@ -1,0 +1,445 @@
+# Reporting and Email Delivery PRD
+
+<overview>
+## Problem Statement
+Weekly Drupal updates need structured reporting in Markdown format and automated email delivery. Users need both machine-readable (JSON) and human-readable (Markdown) outputs, with email delivery for distribution.
+
+## Target Users
+- Email recipients needing weekly Drupal digests
+- Developers consuming structured JSON data
+- System operators reviewing logs
+- Archival systems storing historical reports
+
+## Success Metrics
+- 100% of runs produce parsed.md and summary.md
+- Email delivery success rate > 99%
+- All emails have correct subject and attachment
+- Logs capture all key events with timestamps
+- Table formatting supports 200+ rows without truncation
+</overview>
+
+---
+
+<functional-decomposition>
+## Capability Tree
+
+### Capability: Markdown Report Generation
+Convert structured data to readable Markdown
+
+#### Feature: Parsed Data Report
+- **Description**: Generate parsed.md with raw collected data
+- **Inputs**: Normalized items list
+- **Outputs**: parsed.md Markdown file
+- **Behavior**: Format as table with URL | Name | Description columns
+
+#### Feature: Summary Report
+- **Description**: Write summary.md from AI-generated text
+- **Inputs**: AI summary text, metadata
+- **Outputs**: summary.md Markdown file
+- **Behavior**: Add header with date/timezone, write summary, add footer
+
+#### Feature: Table Formatting
+- **Description**: Format data as Markdown tables
+- **Inputs**: Items list, columns definition
+- **Outputs**: Markdown table string
+- **Behavior**: Generate table header, format rows, truncate if > 200 rows
+
+#### Feature: Markdown Sanitization
+- **Description**: Escape special Markdown characters
+- **Inputs**: Raw text
+- **Outputs**: Sanitized Markdown
+- **Behavior**: Escape |, *, _, `, preserve links
+
+#### Feature: JSON Export
+- **Description**: Write sources.json with structured data
+- **Inputs**: Normalized items
+- **Outputs**: sources.json file
+- **Behavior**: Serialize to JSON with indentation
+
+### Capability: Email Delivery
+Send reports via SMTP
+
+#### Feature: Email Composition
+- **Description**: Build email message with headers
+- **Inputs**: Subject, body, attachment paths
+- **Outputs**: MIME multipart message
+- **Behavior**: Set From/To/Subject, add text body, attach files
+
+#### Feature: Attachment Handling
+- **Description**: Attach Markdown files to email
+- **Inputs**: File paths
+- **Outputs**: MIME attachment parts
+- **Behavior**: Read files, create attachments, set content type
+
+#### Feature: SMTP Delivery
+- **Description**: Send email via configured SMTP server
+- **Inputs**: MIME message, SMTP config
+- **Outputs**: Success/failure status
+- **Behavior**: Connect to SMTP, authenticate, send, disconnect
+
+#### Feature: Email Validation
+- **Description**: Validate email addresses and config
+- **Inputs**: Email address, SMTP config
+- **Outputs**: Boolean (valid/invalid)
+- **Behavior**: Check email format, verify SMTP credentials
+
+#### Feature: Delivery Retry
+- **Description**: Retry email delivery on failure
+- **Inputs**: Message, retry count
+- **Outputs**: Final status
+- **Behavior**: Attempt send, wait on failure, retry up to N times
+
+### Capability: Process Logging
+Structured logging for debugging and monitoring
+
+#### Feature: Log Initialization
+- **Description**: Set up log file for run
+- **Inputs**: Run directory
+- **Outputs**: Configured logger instance
+- **Behavior**: Create run.log, set format, configure handlers
+
+#### Feature: Structured Logging
+- **Description**: Log events with context
+- **Inputs**: Module name, event type, message, metadata
+- **Outputs**: Structured log entry
+- **Behavior**: Format with timestamp, level, module, message
+
+#### Feature: Event Tracking
+- **Description**: Log key pipeline events
+- **Inputs**: Event name, data
+- **Outputs**: Log entry with metrics
+- **Behavior**: Log start/end, counts, durations, results
+
+#### Feature: Error Logging
+- **Description**: Capture and log errors with context
+- **Inputs**: Exception, module name
+- **Outputs**: Error log entry with stack trace
+- **Behavior**: Format exception, include context, log at ERROR level
+
+</functional-decomposition>
+
+---
+
+<structural-decomposition>
+## Repository Structure
+
+```
+drupal-weekly/
+├── src/
+│   ├── markdown_converter.py  # Report generation capability
+│   ├── email_sender.py        # Email delivery capability
+│   └── process_logger.py      # Process logging capability
+├── runs/
+│   └── YYYY-MM-DD/
+│       ├── parsed.md
+│       ├── summary.md
+│       ├── sources.json
+│       ├── email.txt
+│       └── run.log
+```
+
+## Module Definitions
+
+### Module: markdown_converter
+- **Maps to capability**: Markdown Report Generation
+- **Responsibility**: Generate Markdown and JSON reports
+- **Exports**:
+  - `write_parsed_md(items, path)` - Create parsed.md
+  - `write_summary_md(summary, path)` - Create summary.md
+  - `write_sources_json(items, path)` - Create sources.json
+  - `format_table(items, columns)` - Generate Markdown table
+  - `sanitize_markdown(text)` - Escape special chars
+
+### Module: email_sender
+- **Maps to capability**: Email Delivery
+- **Responsibility**: Send reports via SMTP
+- **Exports**:
+  - `send_email(config, to, subject, body, attachments)` - Send email
+  - `compose_message(subject, body, attachments)` - Build MIME message
+  - `validate_config(smtp_config)` - Check SMTP settings
+  - `attach_file(path)` - Create attachment from file
+
+### Module: process_logger
+- **Maps to capability**: Process Logging
+- **Responsibility**: Structured logging throughout pipeline
+- **Exports**:
+  - `get_logger(run_dir)` - Initialize logger
+  - `log_event(module, event, data)` - Log pipeline event
+  - `log_error(module, exception)` - Log error with context
+  - `log_metrics(module, metrics)` - Log metrics data
+
+</structural-decomposition>
+
+---
+
+<dependency-graph>
+## Dependency Chain
+
+### Foundation Layer (Phase 0)
+No dependencies - these are built first.
+
+- **process_logger**: Logging utilities (no dependencies)
+
+### Reporting Layer (Phase 1)
+- **markdown_converter**: Depends on [process_logger]
+
+### Delivery Layer (Phase 2)
+- **email_sender**: Depends on [markdown_converter, process_logger]
+
+</dependency-graph>
+
+---
+
+<implementation-roadmap>
+## Development Phases
+
+### Phase 0: Process Logging
+**Goal**: Set up structured logging system
+
+**Entry Criteria**: Clean repository
+
+**Tasks**:
+- [ ] Implement process logger (depends on: none)
+  - Acceptance criteria: Create run.log, structured format, levels
+  - Test strategy: Test log file creation, format, rotation
+
+**Exit Criteria**: Logger operational, ready for use
+
+**Delivers**: Logging foundation for entire pipeline
+
+---
+
+### Phase 1: Report Generation
+**Goal**: Generate Markdown and JSON reports
+
+**Entry Criteria**: Phase 0 complete
+
+**Tasks**:
+- [ ] Build Markdown converter (depends on: [process_logger])
+  - Acceptance criteria: Generate parsed.md, summary.md, sources.json
+  - Test strategy: Test with various item counts, special characters
+
+- [ ] Implement table formatter (depends on: [markdown_converter])
+  - Acceptance criteria: Format items as Markdown table
+  - Test strategy: Test with 0, 1, 100, 200+ items
+
+- [ ] Add Markdown sanitization (depends on: [markdown_converter])
+  - Acceptance criteria: Escape special chars, preserve links
+  - Test strategy: Test with pipes, asterisks, underscores
+
+- [ ] Create JSON exporter (depends on: [markdown_converter])
+  - Acceptance criteria: Write valid JSON with indentation
+  - Test strategy: Validate JSON format, test encoding
+
+**Exit Criteria**: All report formats generated correctly
+
+**Delivers**: Complete reporting system
+
+---
+
+### Phase 2: Email Delivery
+**Goal**: Send reports via SMTP
+
+**Entry Criteria**: Phase 1 complete
+
+**Tasks**:
+- [ ] Implement email sender (depends on: [markdown_converter, process_logger])
+  - Acceptance criteria: Send email with attachments via SMTP
+  - Test strategy: Mock SMTP server, test success/failure
+
+- [ ] Add attachment handling (depends on: [email_sender])
+  - Acceptance criteria: Attach Markdown files to email
+  - Test strategy: Test with various file sizes, types
+
+- [ ] Create retry logic (depends on: [email_sender])
+  - Acceptance criteria: Retry on failure up to N times
+  - Test strategy: Test with transient failures, timeouts
+
+- [ ] Add email validation (depends on: [email_sender])
+  - Acceptance criteria: Validate email addresses and config
+  - Test strategy: Test with valid/invalid emails, configs
+
+**Exit Criteria**: Email delivery working end-to-end
+
+**Delivers**: Automated email distribution
+
+</implementation-roadmap>
+
+---
+
+<test-strategy>
+## Test Pyramid
+
+```
+        /\
+       /E2E\       ← 10% (Full report generation + email delivery)
+      /------\
+     /Integration\ ← 25% (Report → email flow)
+    /------------\
+   /  Unit Tests  \ ← 65% (Table formatting, sanitization)
+  /----------------\
+```
+
+## Coverage Requirements
+- Line coverage: 90% minimum
+- Branch coverage: 85% minimum
+- Critical paths: 100% (email delivery, file writing)
+
+## Critical Test Scenarios
+
+### Markdown Converter
+**Happy path**:
+- List of items → parsed.md with table
+- Expected: Valid Markdown table with all items
+
+**Edge cases**:
+- Empty list, single item, 200+ items
+- Expected: Handle gracefully, truncate if needed
+
+**Error cases**:
+- Items with special Markdown chars (|, *, _)
+- Expected: Properly escaped, no broken tables
+
+### Email Sender
+**Happy path**:
+- Send email with attachment
+- Expected: Email delivered, attachment correct
+
+**Edge cases**:
+- Large attachments (> 1MB), multiple attachments
+- Expected: Handle within SMTP limits
+
+**Error cases**:
+- SMTP connection failure, auth failure
+- Expected: Retry logic, clear error messages
+
+### Process Logger
+**Happy path**:
+- Log events throughout pipeline
+- Expected: run.log with timestamps, structured format
+
+**Error cases**:
+- Log file write permission denied
+- Expected: Fall back to stdout, log error
+
+## Test Generation Guidelines
+- Mock SMTP server for email tests
+- Use temporary directories for file generation
+- Test Markdown rendering with actual parsers
+- Verify log format with structured parsing
+
+</test-strategy>
+
+---
+
+<architecture>
+## System Components
+- **Markdown Generator**: Python string formatting, table generation
+- **Email Client**: smtplib for SMTP, email.mime for message composition
+- **Logger**: loguru for structured logging
+
+## Data Models
+
+```python
+EmailConfig = {
+    "smtp_host": str,
+    "smtp_port": int,
+    "smtp_user": str,
+    "smtp_pass": str,
+    "mail_from": str,
+    "mail_to": str,
+    "subject_prefix": str
+}
+
+MarkdownReport = {
+    "parsed_md": str,       # Raw data table
+    "summary_md": str,      # AI-generated summary
+    "sources_json": str     # Structured data
+}
+
+LogEntry = {
+    "timestamp": str,       # ISO format
+    "level": str,           # INFO, ERROR, etc.
+    "module": str,          # Module name
+    "event": str,           # Event type
+    "message": str,         # Log message
+    "metadata": dict        # Additional context
+}
+```
+
+## Technology Stack
+- **Markdown**: Native Python string formatting
+- **Email**: smtplib + email.mime (stdlib)
+- **Logging**: loguru>=0.7 for structured logging
+- **JSON**: stdlib json module
+
+**Decision: loguru vs stdlib logging**
+- **Rationale**: Better formatting, easier configuration, structured logs
+- **Trade-offs**: External dependency vs stdlib
+- **Alternatives considered**: stdlib logging (more verbose)
+
+**Decision: SMTP vs email service API**
+- **Rationale**: SMTP more flexible, no vendor lock-in
+- **Trade-offs**: More configuration required
+- **Alternatives considered**: SendGrid API (vendor lock-in)
+
+</architecture>
+
+---
+
+<risks>
+## Technical Risks
+**Risk**: SMTP authentication failures
+- **Impact**: High - no email delivery
+- **Likelihood**: Medium
+- **Mitigation**: Validate credentials on startup, clear error messages
+- **Fallback**: Write email.txt for manual sending
+
+**Risk**: Large attachment size limits
+- **Impact**: Medium - email rejected by server
+- **Likelihood**: Low
+- **Mitigation**: Check attachment size, compress if needed
+- **Fallback**: Link to hosted file instead
+
+## Dependency Risks
+**Risk**: SMTP server downtime
+- **Impact**: High - email not delivered
+- **Likelihood**: Low
+- **Mitigation**: Retry logic, queue for later
+- **Fallback**: Write to email.txt, manual send
+
+## Scope Risks
+**Risk**: Markdown complexity exceeds limits
+- **Impact**: Low - rendering issues
+- **Likelihood**: Low
+- **Mitigation**: Table truncation, size limits
+- **Fallback**: Split into multiple files
+
+**Risk**: Log file growth
+- **Impact**: Medium - disk space usage
+- **Likelihood**: Medium
+- **Mitigation**: Log rotation, retention limits
+- **Fallback**: Compress old logs
+
+</risks>
+
+---
+
+<appendix>
+## References
+- Markdown spec: https://commonmark.org/
+- SMTP RFC: https://tools.ietf.org/html/rfc5321
+- loguru docs: https://loguru.readthedocs.io/
+
+## Glossary
+- **MIME**: Multipurpose Internet Mail Extensions - email format
+- **SMTP**: Simple Mail Transfer Protocol - email delivery
+- **Markdown**: Lightweight markup language
+- **Structured logging**: Log entries with consistent format and metadata
+
+## Open Questions
+- Should we support HTML email format?
+- PDF attachment instead of Markdown?
+- Email encryption (TLS/SSL)?
+- Multiple email recipients?
+</appendix>

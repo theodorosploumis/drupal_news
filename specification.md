@@ -4,7 +4,7 @@
 
 ## 0. One-liner
 
-Automated weekly Drupal aggregator: collect, normalize, cache, validate, summarize via selectable LLMs (OpenAI, Anthropic, Gemini, Ollama, LM Studio, Qwen, Grok, DeepSeek, OpenRouter), emit Markdown reports, email results, and log metrics. Timezone Europe/Athens.
+Automated weekly Drupal aggregator: collect, normalize, cache, validate, summarize via selectable LLMs (OpenAI, Anthropic, Gemini, Ollama, LM Studio, Qwen, Grok, DeepSeek, OpenRouter), emit Markdown reports, email results, and log metrics.
 
 ---
 
