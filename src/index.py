@@ -225,7 +225,7 @@ def main():
                 cache,
                 timeout=config["http"]["timeout_sec"],
                 retries=config["http"]["retries"],
-                user_agent=config["http"]["ua"]
+                user_agent=config["http"]["user_agent"]
             )
             logger.info("rss_reader", f"Fetched {len(rss_items)} RSS items")
 
@@ -238,7 +238,7 @@ def main():
                 cache,
                 timeout=config["http"]["timeout_sec"],
                 retries=config["http"]["retries"],
-                user_agent=config["http"]["ua"]
+                user_agent=config["http"]["user_agent"]
             )
             logger.info("webpage_reader", f"Fetched {len(page_items)} page items")
 
