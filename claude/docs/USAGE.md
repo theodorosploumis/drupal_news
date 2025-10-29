@@ -126,3 +126,13 @@ runs/
 2. **Compare Models**: Generate summaries with multiple providers from the same sources to compare quality
 3. **Save Time**: Skip re-fetching when experimenting with prompts or models
 4. **Cost Control**: Use cached sources to avoid redundant API calls to feed sources
+
+## Cron Automation
+
+Schedule a weekly summary every Monday at 07:00 local time:
+
+```
+0 7 * * MON /usr/bin/env bash -lc 'cd /srv/Samsung4T/Tools/AI/drupal_news/claude && source venv/bin/activate && PYTHONPATH=src python index.py --provider anthropic --email yes'
+```
+
+Adjust the schedule, provider, and email flag as needed for your environment.

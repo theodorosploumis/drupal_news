@@ -60,6 +60,10 @@ providers:
     model: openai/gpt-oss-20b:free
     temperature: 0.2
     api_url: https://openrouter.ai/api/v1  # Optional: custom OpenRouter endpoint
+    headers:
+      Authorization: Bearer ${OPENROUTER_API_KEY}
+      HTTP-Referer: https://drupal-news.org
+      X-Title: Drupal News Aggregator
 
   # Generic provider - works with ANY OpenAI-compatible API
   openrouter_minimax:
@@ -69,5 +73,5 @@ providers:
     api_url: https://openrouter.ai/api/v1
     headers:
       Authorization: Bearer ${OPENROUTER_API_KEY}
-      HTTP-Referer: https://drupal-news.com
+      HTTP-Referer: https://drupal-news.org
       X-Title: Drupal News Aggregator
