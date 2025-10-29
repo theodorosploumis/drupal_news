@@ -153,7 +153,7 @@ drupal-news-viewer
 # Open http://localhost:5000
 
 # Or from source
-python3 viewer.py
+python3 src/viewer.py
 ```
 
 Features: tabs/split view, run history, metrics, logs
@@ -244,8 +244,8 @@ When using from source:
 ├── setup.sh        # Setup script
 ├── index.py        # Main entry (wrapper)
 ├── scheduler.py    # Scheduler (wrapper)
-├── viewer.py       # Web viewer (wrapper)
 ├── src/            # Source code
+├── src/viewer.py        # Web viewer (wrapper)
 ├── venv/                # Virtual env
 ├── config.yml           # Unified configuration
 ├── config.example.yml   # Configuration examples

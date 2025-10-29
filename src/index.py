@@ -103,17 +103,35 @@ def load_providers_config(providers_path: str = "config.yml") -> dict:
         sys.exit(1)
 
 
-def load_env_vars(env_path: str = ".env") -> dict:
-    """Load environment variables."""
+def load_env_vars(env_path: str = ".env", config: dict = None) -> dict:
+    """
+    Load environment variables.
+
+    Priority:
+    1. config.yml smtp section (with ${VAR} substitution already applied)
+    2. Environment variables from .env file
+    3. Defaults
+
+    Args:
+        env_path: Path to .env file
+        config: Configuration dict (optional, for SMTP settings)
+
+    Returns:
+        Dictionary with environment configuration
+    """
     load_dotenv(env_path)
+
+    # Try to get SMTP config from config.yml first, then fall back to env vars
+    smtp_config = config.get("smtp", {}) if config else {}
+
     return {
         "TIMEZONE": os.getenv("TIMEZONE", "Europe/Athens"),
-        "SMTP_HOST": os.getenv("SMTP_HOST"),
-        "SMTP_PORT": os.getenv("SMTP_PORT"),
-        "SMTP_USER": os.getenv("SMTP_USER"),
-        "SMTP_PASS": os.getenv("SMTP_PASS"),
-        "MAIL_TO": os.getenv("MAIL_TO"),
-        "MAIL_FROM": os.getenv("MAIL_FROM"),
+        "SMTP_HOST": smtp_config.get("host") or os.getenv("SMTP_HOST"),
+        "SMTP_PORT": smtp_config.get("port") or os.getenv("SMTP_PORT"),
+        "SMTP_USER": smtp_config.get("user") or os.getenv("SMTP_USER"),
+        "SMTP_PASS": smtp_config.get("password") or os.getenv("SMTP_PASS"),
+        "MAIL_TO": smtp_config.get("mail_to") or os.getenv("MAIL_TO"),
+        "MAIL_FROM": smtp_config.get("mail_from") or os.getenv("MAIL_FROM"),
         "LOG_RETENTION_DAYS": int(os.getenv("LOG_RETENTION_DAYS", 45)),
         "RUN_RETENTION_DAYS": int(os.getenv("RUN_RETENTION_DAYS", 90)),
         "CACHE_DB_PATH": os.getenv("CACHE_DB_PATH", "./cache/cache.db"),
@@ -143,7 +161,7 @@ def main():
     # Load configuration
     config = load_config(args.config)
     providers_config = load_providers_config(args.providers)
-    env = load_env_vars(args.env)
+    env = load_env_vars(args.env, config)
 
     # Setup
     timezone = env["TIMEZONE"]

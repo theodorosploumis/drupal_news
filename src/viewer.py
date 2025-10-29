@@ -10,10 +10,53 @@ from pathlib import Path
 from flask import Flask, render_template_string, jsonify, request
 import markdown
 
-app = Flask(__name__, static_folder='static', static_url_path='/static')
+
+def get_static_folder():
+    """Determine the static folder location."""
+    # Check if static folder exists in current working directory
+    cwd_static = Path.cwd() / "static"
+    if cwd_static.exists():
+        return str(cwd_static)
+
+    # Fall back to package static folder
+    package_static = Path(__file__).parent.parent / "static"
+    if package_static.exists():
+        return str(package_static)
+
+    # Last resort: current directory
+    return 'static'
+
+
+app = Flask(__name__, static_folder=get_static_folder(), static_url_path='/static')
+
+
+def get_run_root():
+    """
+    Determine the runs directory location.
+    Priority: ENV var > config.yml > current working directory.
+    """
+    # 1. Check environment variable
+    env_run_root = os.getenv("DRUPAL_NEWS_RUN_ROOT")
+    if env_run_root:
+        return Path(env_run_root)
+
+    # 2. Try loading from config.yml
+    config_path = Path.cwd() / "config.yml"
+    if config_path.exists():
+        try:
+            from drupal_news.utils.config_loader import load_config
+            config = load_config(str(config_path))
+            if "run_root" in config:
+                return Path(config["run_root"])
+        except Exception:
+            pass  # Fall through to default
+
+    # 3. Default to current working directory + runs
+    return Path.cwd() / "runs"
+
 
 # Configuration
-RUN_ROOT = Path(__file__).parent / "runs"
+RUN_ROOT = get_run_root()
 
 
 def get_available_runs():
