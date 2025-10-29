@@ -89,7 +89,7 @@ jobs:
         echo "changelog_file=/tmp/changelog.txt" >> $GITHUB_OUTPUT
 
     - name: Create GitHub Release
-      uses: softprops/action-gh-release@v1
+      uses: softprops/action-gh-release@v2
       with:
         body_path: ${{ steps.changelog.outputs.changelog_file }}
         files: |
@@ -98,7 +98,7 @@ jobs:
         draft: false
         prerelease: false
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        RELEASE_TOKEN: ${{ secrets.RELEASE_TOKEN }}
 
     - name: Success message
       run: |
