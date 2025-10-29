@@ -34,6 +34,22 @@ python3 index.py --dry-run
 
 ## Configuration
 
+### Configuration Files Location
+
+The CLI commands look for configuration files in this order:
+
+1. **Current working directory** (default)
+   - `config.json`
+   - `providers.yaml`
+   - `.env`
+
+2. **Custom paths** (via CLI flags)
+   ```bash
+   drupal-news --config /path/to/config.json \
+               --providers /path/to/providers.yaml \
+               --env /path/to/.env
+   ```
+
 ### Environment Variables (.env)
 
 ```bash
@@ -48,11 +64,11 @@ MAIL_FROM=sender@example.com
 
 ### News Sources (config.json)
 
-Edit `config.json` in the root directory to manage RSS feeds and web pages.
+Edit `config.json` to manage RSS feeds and web pages.
 
 ### AI Summarizer Prompt (prompt.md)
 
-Edit `prompt.md` in the root directory to customize the AI summarization prompt:
+Edit `prompt.md` to customize the AI summarization prompt:
 
 ```markdown
 # Requirements
@@ -197,7 +213,7 @@ Launch web interface to view reports.
 drupal-news-viewer
 
 Opens http://localhost:5000
-Features: tabs/split view, run history, metrics, logs
+Features: tabs, run history, metrics, logs
 ```
 
 ## Output
@@ -257,4 +273,4 @@ The release script:
 
 ## License
 
-GPL-V2
+[GPL-V2](LICENSE.txt)
