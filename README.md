@@ -29,4 +29,4 @@ This repository hosts a provider-agnostic automation pipeline that assembles the
 Refer to `specification.md` for deeper architectural guidance and implementation commitments across providers.
 
 ## License
-[GPL v2][LICENSE.txt]
+[GPL v2][LICENSE]

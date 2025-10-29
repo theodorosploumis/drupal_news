@@ -39,7 +39,7 @@ providers:
 
   grok:
     client: grok_client
-    model: grok-beta
+    model: grok-4-fast-reasoning
     temperature: 0.2
     # api_url: https://api.x.ai/v1  # Optional: custom Grok endpoint
     # Example with Portkey proxy:
