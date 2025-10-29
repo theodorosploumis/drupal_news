@@ -18,11 +18,6 @@ Automated weekly Drupal aggregator: collect, normalize, cache, validate, summari
 * Validate and ensure reference integrity.
 * Email the weekly summary with a PDF attachment.
 * Collect metrics and maintain logs.
-* Calculate the costs for each AI run.
-* Create basic md files for help (README.md, USAGE.md, PROVIDERS.md etc). Put everything except README.md under `docs/` folder.
-* Provide a script to make this a python executable that I could deploy on pypi.org.
-* Provide a GitHub automation (CI) that creates a new Python package on every new git tag.
-* Provide a way (pre-commit hook or bash script) to generate a new RELEASE update on every git tag. Create a RELEASES.md file.
 
 ---
 
@@ -541,6 +536,7 @@ def main():
 
 - This app is for advanced developers.
 - Do not add detailed explanations on md files. Only the commands needed with a basic short explanation.
+- Add a GPL-V2 licence. Get it from https://github.com/github/choosealicense.com/raw/refs/heads/gh-pages/_licenses/gpl-2.0.txt
 - Add a .gitignore with the sensitive data on it so we can use git.
 - Keep README.md short, no duplicates on it.
 
@@ -550,3 +546,7 @@ def main():
 
 A modular, cron- or scheduler-ready Python system that autonomously compiles Drupal’s weekly updates, cleans itself, and works with multiple AI models including local and remote inference endpoints.
 It’s reproducible, reference-linked, and silent—no external alerts, just clean artifacts and logs.
+
+## Task Master AI Instructions
+**Import Task Master's development workflow commands and guidelines, treat as if import is in the main CLAUDE.md file.**
+@./.taskmaster/CLAUDE.md

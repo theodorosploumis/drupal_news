@@ -1,32 +1,127 @@
-# Drupal News Aggregator Monorepo
+# Drupal News Aggregator
 
-This repository hosts a provider-agnostic automation pipeline that assembles the past week's Drupal announcements, module releases, and AI-related initiatives into structured reports. Each provider directory (for example `openai/`, `claude/`, `grok/`, `q/`, `opcode/`) packages the same core workflow with the credentials, SDK clients, and configuration required for that large language model or API.
+Automated Drupal news aggregation with AI summarization.
 
-## Key Capabilities
-- Collects curated RSS feeds and canonical Drupal pages, constrained to the last seven days in the Europe/Athens timezone.
-- Normalises, deduplicates, and validates entries before promotion to the final report set.
-- Generates Markdown, JSON, PDF, and email-ready artifacts per run under `runs/YYYY-MM-DD/`.
-- Exposes a pluggable summarisation layer so different AI providers can produce human-friendly highlights.
-- Persists cache data and run metrics to reduce repeated downloads and aid observability.
+## Quick Start
 
-## Repository Layout
-- `specification.md` — project requirements, objectives, and architectural expectations.
-- `openai/`, `claude/`, `grok/`, `opcode/`, `q/` — provider-specific implementations built on the shared spec.
-- `runs/` (inside each provider package) — dated execution outputs (`parsed.md`, `summary.md`, `sources.json`, `metrics.json`, etc.).
-- `utils/`, `src/`, `tests/` — live under each provider directory and include the ingestion pipeline, adapters, helpers, and automated tests.
+```bash
+./setup.sh
+source venv/bin/activate
+python3 index.py --dry-run
+```
 
-## Getting Started
-1. Pick a provider directory that matches the LLM service you plan to use (for instance `openai/`).
-2. Follow that directory's `README.md` for environment setup, dependency installation, and CLI usage.
-3. Create a `.env` (or provider-specific variant) with API keys, email settings, and scheduling parameters.
-4. Run the entrypoint (typically `python -m src.index --provider <name>`). Optional schedulers, PDF/email exporters, and web viewers are documented in the provider README files.
+## Configuration
 
-## Operational Notes
-- Outputs are organised per execution date and include validation reports to help catch broken links or schema drift.
-- The pipeline favours Drupal.org links and omits sandbox modules or non-Drupal content by design.
-- If no qualifying news is found for a period, the summary explicitly states the absence of major updates.
+### Environment Variables (.env)
 
-Refer to `specification.md` for deeper architectural guidance and implementation commitments across providers.
+```bash
+TIMEZONE=Europe/Athens
+SMTP_HOST=smtp.example.com
+SMTP_PORT=587
+SMTP_USER=user@example.com
+SMTP_PASS=password
+MAIL_TO=recipient@example.com
+MAIL_FROM=sender@example.com
+```
+
+### News Sources (config.json)
+
+Edit `config.json` in the root directory to manage RSS feeds and web pages.
+
+### AI Summarizer Prompt (prompt.md)
+
+Edit `prompt.md` in the root directory to customize the AI summarization prompt:
+
+```markdown
+# Requirements
+1. Focus on: AI module and news on AI
+2. Each fact MUST include a [source](URL) link
+3. Use clear, factual language - no hype
+...
+```
+
+**Note:** If `prompt.md` is not found, the system uses a hardcoded default template.
+
+### AI Providers (providers.yaml)
+
+Configure AI models in `providers.yaml`
+
+## Usage
+
+```bash
+# Basic
+python3 index.py --provider openai --days 7
+
+# Test
+python3 index.py --dry-run --verbose
+
+# Schedule
+python3 scheduler.py --every friday --hour 9 --provider openai
+
+# Cron
+0 9 * * 5 cd /path && python3 index.py --provider openai
+```
+
+## Web Viewer
+
+```bash
+python3 viewer.py
+# Open http://localhost:5000
+```
+
+Features: tabs/split view, run history, metrics, logs
+
+## Providers
+
+Built-in: OpenAI, Anthropic, Gemini, Ollama, LMStudio, Qwen, Grok, DeepSeek, OpenRouter
+
+**Generic:** Works with ANY OpenAI-compatible API (OpenRouter, Together AI, Groq, Perplexity, Fireworks, Azure OpenAI, custom endpoints)
+
+See: [Generic Provider Guide](docs/GENERIC_PROVIDER.md)
+
+## CLI Flags
+
+```bash
+--provider 	<name>     AI provider
+--model 	<name>     Override model
+--days 		 <n>       Timeframe (default: 7)
+--email 	yes|no     Send email
+--dry-run              Skip AI/email
+--verbose              Debug output
+--config 	<path>     Custom config.json
+--providers <path>     Custom providers.yaml
+--env 		<path>     Custom .env
+--outdir 	<path>     Custom output directory
+```
+
+## Output
+
+`runs/YYYY-MM-DD/`: parsed.md, summary.md, sources.json, metrics.json, run.log
+
+## Structure
+
+```
+├── setup.sh        # Setup script
+├── index.py        # Main entry
+├── scheduler.py    # Scheduler
+├── viewer.py       # Web viewer
+├── src/            # Source code
+├── venv/           # Virtual env
+├── config.json     # Config
+├── providers.yaml  # AI providers
+├── prompt.md       # AI summarizer prompt (optional)
+└── .env            # Credentials
+```
+
+## Exit Codes
+
+-  0: Success
+- 10: Partial fetch failure
+- 20: Validation failed
+- 30: Summarizer failed
+- 40: Email failure
+- 50: Integrity check failed
 
 ## License
-[GPL v2][LICENSE]
+
+GPL-V2
