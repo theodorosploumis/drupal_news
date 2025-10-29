@@ -29,28 +29,40 @@ Generate the summary in Markdown format with proper sections and source links.
 
 def load_prompt_template(prompt_file: str = None) -> str:
     """
-    Load prompt template from markdown file or use default.
+    Load prompt template from config.yml or use default.
+
+    Priority:
+    1. Specified prompt_file parameter (for testing/overrides)
+    2. config.yml prompt section
+    3. Hardcoded default (fallback)
 
     Args:
-        prompt_file: Path to prompt.md file (default: prompt.md in project root)
+        prompt_file: Path to prompt file (optional, overrides config)
 
     Returns:
         Prompt template string with placeholders
     """
-    if prompt_file is None:
-        # Default to prompt.md in the project root
-        prompt_file = Path(__file__).parent.parent / 'prompt.md'
+    # If specific file provided, try to use it
+    if prompt_file is not None:
+        prompt_path = Path(prompt_file)
+        if prompt_path.exists():
+            try:
+                return prompt_path.read_text(encoding='utf-8')
+            except Exception as e:
+                print(f"Warning: Could not read {prompt_file}: {e}")
 
-    prompt_path = Path(prompt_file)
-
-    if prompt_path.exists():
-        try:
-            return prompt_path.read_text(encoding='utf-8')
-        except Exception as e:
-            print(f"Warning: Could not read {prompt_file}: {e}")
-            print("Using default hardcoded prompt template")
+    # Load from unified config.yml
+    try:
+        from drupal_news.utils.config_loader import get_config
+        config = get_config("config.yml")
+        prompt = config.get_prompt_template()
+        if prompt:
+            return prompt
+    except Exception as e:
+        print(f"Warning: Could not load prompt from config.yml: {e}")
 
     # Fall back to hardcoded default
+    print("Using default hardcoded prompt template")
     return SUMMARIZER_PROMPT_TEMPLATE
 
 

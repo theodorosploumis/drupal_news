@@ -31,6 +31,7 @@ from drupal_news.utils.timebox import days_ago, get_iso_timestamp, now_in_tz, ge
 from drupal_news.utils.dedupe import dedupe_items
 from drupal_news.utils.io_safe import safe_write_json, safe_read_json, safe_read_yaml, ensure_dir
 from drupal_news.utils.md_config_parser import merge_sources_config
+from drupal_news.utils.config_loader import get_config, load_config as load_unified_config, load_providers_config as load_unified_providers
 
 
 # Exit codes
@@ -42,18 +43,26 @@ EXIT_EMAIL_FAILED = 40
 EXIT_INTEGRITY_FAILED = 50
 
 
-def load_config(config_path: str = "config.json") -> dict:
-    """Load configuration file and merge with markdown sources if available."""
-    config = safe_read_json(Path(config_path))
-    if not config:
-        print(f"Error: Could not load config from {config_path}")
+def load_config(config_path: str = "config.yml") -> dict:
+    """
+    Load unified configuration from config.yml.
+
+    Args:
+        config_path: Path to config.yml file (default: config.yml)
+
+    Returns:
+        Configuration dictionary with core and sources sections
+
+    Raises:
+        FileNotFoundError: If config file doesn't exist
+    """
+    try:
+        config = load_unified_config(str(config_path))
+        return config
+    except FileNotFoundError:
+        print(f"Error: Config file not found: {config_path}")
+        print(f"Create one from the example: cp config.example.yml config.yml")
         sys.exit(1)
-
-    # Merge sources from sources.md if it exists
-    # Markdown sources take precedence over JSON sources
-    config = merge_sources_config(config)
-
-    return config
 
 
 def expand_env_vars(data):
@@ -73,14 +82,25 @@ def expand_env_vars(data):
         return data
 
 
-def load_providers_config(providers_path: str = "providers.yaml") -> dict:
-    """Load providers configuration and expand environment variables."""
-    providers = safe_read_yaml(Path(providers_path))
-    if not providers:
-        print(f"Error: Could not load providers from {providers_path}")
+def load_providers_config(providers_path: str = "config.yml") -> dict:
+    """
+    Load providers configuration from unified config.yml.
+
+    Args:
+        providers_path: Path to config.yml file (default: config.yml)
+
+    Returns:
+        Providers configuration dictionary with default_provider and providers sections
+
+    Raises:
+        FileNotFoundError: If config file doesn't exist
+    """
+    try:
+        return load_unified_providers(str(providers_path))
+    except FileNotFoundError:
+        print(f"Error: Config file not found: {providers_path}")
+        print(f"Create one from the example: cp config.example.yml config.yml")
         sys.exit(1)
-    # Expand environment variables in the config
-    return expand_env_vars(providers)
 
 
 def load_env_vars(env_path: str = ".env") -> dict:
@@ -112,8 +132,8 @@ def main():
     parser.add_argument("--dry-run", action="store_true", help="Skip AI and email (testing)")
     parser.add_argument("--use-sources", metavar="DATE", help="Use existing sources from DATE (YYYY-MM-DD), skip fetching")
     parser.add_argument("--fetch-only", action="store_true", help="Only fetch and parse sources, skip AI and email")
-    parser.add_argument("--config", default="config.json", help="Config file path")
-    parser.add_argument("--providers", default="providers.yaml", help="Providers file path")
+    parser.add_argument("--config", default="config.yml", help="Config file path (default: config.yml)")
+    parser.add_argument("--providers", default="config.yml", help="Providers file path (default: config.yml)")
     parser.add_argument("--env", default=".env", help="Environment file path")
     parser.add_argument("--outdir", default=None, help="Output directory override")
     parser.add_argument("--verbose", action="store_true", help="Verbose logging")

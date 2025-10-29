@@ -41,8 +41,11 @@ Thumbs.db
 
 # Environment and API keys
 .env
-providers.yaml
-config.json
+config.yml
+
+# Keep example files in version control
+!config.example.yml
+!litellm_config.example.yaml
 
 # Output directories
 runs/

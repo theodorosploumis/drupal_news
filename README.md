@@ -10,9 +10,9 @@ Automated Drupal news aggregation with AI summarization.
 pip install drupal-news
 
 # With AI providers
-pip install drupal-news[openai]
-pip install drupal-news[anthropic]
-pip install drupal-news[all-providers]
+pip install "drupal-news[openai]"
+pip install "drupal-news[anthropic]"
+pip install "drupal-news[all-providers]"
 ```
 
 ### From Source
@@ -34,25 +34,43 @@ python3 index.py --dry-run
 
 ## Configuration
 
-### Configuration Files Location
+### Unified Configuration (config.yml)
 
-The CLI commands look for configuration files in this order:
+All configuration is now in a single `config.yml` file:
 
-1. **Current working directory** (default)
-   - `config.json`
-   - `providers.yaml`
-   - `.env`
+```bash
+# Create from example
+cp config.example.yml config.yml
 
-2. **Custom paths** (via CLI flags)
-   ```bash
-   drupal-news --config /path/to/config.json \
-               --providers /path/to/providers.yaml \
-               --env /path/to/.env
-   ```
+# Edit to customize
+nano config.yml
+```
+
+**Configuration sections:**
+
+- **Core settings**: timeframe, HTTP options, email, markdown
+- **Sources**: RSS feeds and web pages to scrape
+- **AI providers**: Model configurations for summarization
+- **Prompt template**: Customize AI summarization instructions
+- **API keys**: Store or reference environment variables
+
+### Custom Configuration Path
+
+```bash
+drupal-news --config /path/to/config.yml
+
+# Or from source
+python3 index.py --config /path/to/config.yml
+```
 
 ### Environment Variables (.env)
 
+You can still use `.env` for sensitive data:
+
 ```bash
+# .env (optional)
+OPENROUTER_API_KEY=sk-or-v1-...
+ANTHROPIC_API_KEY=sk-ant-api03-...
 TIMEZONE=Europe/Athens
 SMTP_HOST=smtp.example.com
 SMTP_PORT=587
@@ -62,27 +80,24 @@ MAIL_TO=recipient@example.com
 MAIL_FROM=sender@example.com
 ```
 
-### News Sources (config.json)
+Reference them in `config.yml` using `${VAR_NAME}`:
 
-Edit `config.json` to manage RSS feeds and web pages.
-
-### AI Summarizer Prompt (prompt.md)
-
-Edit `prompt.md` to customize the AI summarization prompt:
-
-```markdown
-# Requirements
-1. Focus on: AI module and news on AI
-2. Each fact MUST include a [source](URL) link
-3. Use clear, factual language - no hype
-...
+```yaml
+api_keys:
+  OPENROUTER_API_KEY: ${OPENROUTER_API_KEY}  # From .env
+  ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
 ```
 
-**Note:** If `prompt.md` is not found, the system uses a hardcoded default template.
+### Configuration Examples
 
-### AI Providers (providers.yaml)
+See `config.example.yml` for comprehensive examples of:
 
-Configure AI models in `providers.yaml`
+- Multiple AI providers (OpenAI, Anthropic, Gemini, Ollama, etc.)
+- Custom API endpoints and proxies
+- Advanced page scraping with CSS selectors
+- Custom prompt templates
+
+**Migration Guide**: See `MIGRATION.md` if upgrading from old config files
 
 ## Usage
 
@@ -168,8 +183,7 @@ Options:
   --dry-run               Skip AI and email (testing mode)
   --fetch-only            Only fetch and parse, skip AI
   --use-sources <date>    Use cached sources from date (YYYY-MM-DD)
-  --config <path>         Custom config.json path
-  --providers <path>      Custom providers.yaml path
+  --config <path>         Custom config.yml path
   --env <path>            Custom .env path
   --outdir <path>         Custom output directory
   --verbose               Enable debug logging
@@ -232,16 +246,15 @@ When using from source:
 ├── scheduler.py    # Scheduler (wrapper)
 ├── viewer.py       # Web viewer (wrapper)
 ├── src/            # Source code
-├── venv/           # Virtual env
-├── config.json     # Configuration
-├── providers.yaml  # AI providers
-├── prompt.md       # Custom AI prompt (optional)
-└── .env            # Environment variables
+├── venv/                # Virtual env
+├── config.yml           # Unified configuration
+├── config.example.yml   # Configuration examples
+└── .env                 # Optional environment variables
 ```
 
 ## Exit Codes
 
--  0: Success
+- 0:  Success
 - 10: Partial fetch failure
 - 20: Validation failed
 - 30: Summarizer failed
@@ -266,6 +279,7 @@ Contributions welcome! See [docs/RELEASING.md](docs/RELEASING.md) for release pr
 ```
 
 The release script:
+
 - Updates VERSION file
 - Updates RELEASES.md with changelog
 - Creates git commit and tag

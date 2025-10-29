@@ -38,7 +38,7 @@ def main():
     parser.add_argument("--latest", action="store_true", help="Use latest run")
     parser.add_argument("--to", help="Override recipient email")
     parser.add_argument("--days", type=int, default=7, help="Timeframe days (for label)")
-    parser.add_argument("--config", default="config.json", help="Config file path")
+    parser.add_argument("--config", default="config.yml", help="Config file path")
     parser.add_argument("--env", default=".env", help="Environment file path")
     parser.add_argument("--runs-dir", default="./runs", help="Runs directory")
 
