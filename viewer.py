@@ -10,7 +10,7 @@ from pathlib import Path
 from flask import Flask, render_template_string, jsonify, request
 import markdown
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder='static', static_url_path='/static')
 
 # Configuration
 RUN_ROOT = Path(__file__).parent / "runs"
@@ -73,7 +73,7 @@ HTML_TEMPLATE = """
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Drupal News Viewer - {{ run_date }}</title>
-    <link crossorigin="anonymous" media="all" rel="stylesheet" href="./static/css/viewer.css" />
+    <link crossorigin="anonymous" media="all" rel="stylesheet" href="/static/css/viewer.css" />
 </head>
 <body>
     <header>
@@ -83,7 +83,7 @@ HTML_TEMPLATE = """
     <div class="container">
         <div class="controls">
             <div>
-                <label for="run-select">Select Run: </label>
+                <label for="run-select">Select date: </label>
                 <select id="run-select" onchange="changeRun(this.value)">
                     {% for run in runs %}
                     <option value="{{ run }}" {% if run == run_date %}selected{% endif %}>{{ run }}</option>
