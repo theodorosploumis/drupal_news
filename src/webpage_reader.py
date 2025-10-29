@@ -1,27 +1,50 @@
 """Webpage reader and scraper for Drupal Aggregator."""
 import httpx
 from bs4 import BeautifulSoup
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Union
 from datetime import datetime
-from utils.timebox import parse_date, is_within_timeframe
-from utils.html_norm import strip_html_tags, clean_text, truncate_text, extract_links
-from cache_manager import CacheManager
+from drupal_news.utils.timebox import parse_date, is_within_timeframe
+from drupal_news.utils.html_norm import strip_html_tags, clean_text, truncate_text, extract_links
+from drupal_news.cache_manager import CacheManager
+
+
+def normalize_page_config(page_source: Union[str, Dict[str, Any]]) -> Dict[str, Any]:
+    """
+    Normalize page source to standard config format.
+
+    Args:
+        page_source: Either a URL string or a config dict with url and selectors
+
+    Returns:
+        Dict with 'url' and optional 'selectors'
+    """
+    if isinstance(page_source, str):
+        return {"url": page_source, "selectors": None}
+    elif isinstance(page_source, dict):
+        return {
+            "url": page_source.get("url"),
+            "selectors": page_source.get("selectors"),
+            "name": page_source.get("name", ""),
+            "base_url": page_source.get("base_url", "")
+        }
+    else:
+        raise ValueError(f"Invalid page source format: {type(page_source)}")
 
 
 def fetch_pages(
-    page_urls: List[str],
+    page_sources: List[Union[str, Dict[str, Any]]],
     since: datetime,
     timezone: str,
     cache: Optional[CacheManager] = None,
     timeout: int = 20,
     retries: int = 2,
-    user_agent: str = "DrupalWeeklyBot/1.0"
+    user_agent: str = "DrupalNewsBot/1.0"
 ) -> List[Dict[str, Any]]:
     """
     Fetch and scrape web pages for news items.
 
     Args:
-        page_urls: List of page URLs to scrape
+        page_sources: List of page URLs or config objects to scrape
         since: Datetime threshold for filtering items
         timezone: Timezone name
         cache: Optional cache manager
@@ -34,8 +57,14 @@ def fetch_pages(
     """
     items = []
 
-    for url in page_urls:
+    for page_source in page_sources:
         try:
+            # Normalize config
+            config = normalize_page_config(page_source)
+            url = config["url"]
+            selectors = config.get("selectors")
+            base_url = config.get("base_url") or "https://www.drupal.org"
+
             # Check cache first
             if cache:
                 cached = cache.get(url)
@@ -48,8 +77,11 @@ def fetch_pages(
             response = httpx.get(url, headers=headers, timeout=timeout, follow_redirects=True)
             response.raise_for_status()
 
-            # Parse based on URL pattern
-            if "drupal.org/news" in url:
+            # Parse based on selectors or URL pattern
+            if selectors:
+                # Use custom selectors
+                page_items = parse_with_selectors(response.text, url, since, timezone, selectors, base_url)
+            elif "drupal.org/news" in url:
                 page_items = parse_drupal_news(response.text, url, since, timezone)
             elif "drupal.org/planet" in url:
                 page_items = parse_drupal_planet(response.text, url, since, timezone)
@@ -68,6 +100,119 @@ def fetch_pages(
             print(f"HTTP error fetching page {url}: {e}")
         except Exception as e:
             print(f"Error processing page {url}: {e}")
+
+    return items
+
+
+def parse_with_selectors(
+    html: str,
+    source_url: str,
+    since: datetime,
+    timezone: str,
+    selectors: Dict[str, str],
+    base_url: str = "https://www.drupal.org"
+) -> List[Dict[str, Any]]:
+    """
+    Parse HTML using custom CSS selectors.
+
+    Args:
+        html: HTML content
+        source_url: Source URL
+        since: Datetime threshold
+        timezone: Timezone name
+        selectors: Dict of CSS selectors for different elements
+        base_url: Base URL for making relative URLs absolute
+
+    Selector keys:
+        - container: Container element for items (required)
+        - title: Title element (required)
+        - link: Link element (defaults to title if not provided)
+        - description: Description element (optional)
+        - date: Date element (optional)
+
+    Returns:
+        List of normalized items
+    """
+    soup = BeautifulSoup(html, "lxml")
+    items = []
+
+    # Get container selector
+    container_selector = selectors.get("container")
+    if not container_selector:
+        print(f"Warning: No container selector provided for {source_url}")
+        return items
+
+    # Find all containers
+    containers = soup.select(container_selector)
+
+    for container in containers[:20]:  # Limit to 20 items
+        try:
+            # Extract title
+            title_selector = selectors.get("title")
+            if not title_selector:
+                continue
+
+            title_elem = container.select_one(title_selector)
+            if not title_elem:
+                continue
+
+            title = clean_text(title_elem.get_text())
+            if not title:
+                continue
+
+            # Extract link
+            link_selector = selectors.get("link", title_selector)
+            link_elem = container.select_one(link_selector)
+
+            if link_elem and link_elem.name == "a":
+                link = link_elem.get("href", "")
+            elif link_elem:
+                # If link selector doesn't point to <a>, find <a> inside it
+                link_tag = link_elem.find("a")
+                link = link_tag.get("href", "") if link_tag else ""
+            else:
+                link = source_url
+
+            # Make absolute URL
+            if link.startswith("/"):
+                link = base_url + link
+            elif not link.startswith("http"):
+                link = source_url
+
+            # Extract description
+            description = ""
+            desc_selector = selectors.get("description")
+            if desc_selector:
+                desc_elem = container.select_one(desc_selector)
+                if desc_elem:
+                    description = truncate_text(clean_text(desc_elem.get_text()), 500)
+
+            # Extract date
+            date_obj = None
+            date_selector = selectors.get("date")
+            if date_selector:
+                date_elem = container.select_one(date_selector)
+                if date_elem:
+                    date_str = date_elem.get("datetime", "") or date_elem.get_text()
+                    date_obj = parse_date(date_str, timezone) if date_str else None
+
+                    # Filter by date if provided
+                    if date_obj and not is_within_timeframe(date_obj, since, timezone):
+                        continue
+
+            items.append({
+                "title": title,
+                "url": link,
+                "description": description,
+                "date": date_obj.isoformat() if date_obj else "",
+                "source_type": "page",
+                "source_url": source_url,
+                "tags": []
+            })
+
+        except Exception as e:
+            print(f"Error parsing item from {source_url}: {e}")
+            continue
 
     return items
 

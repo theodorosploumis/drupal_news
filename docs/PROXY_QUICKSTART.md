@@ -270,7 +270,7 @@ grok:
   headers:
     x-portkey-api-key: pk-YOUR-KEY
     x-portkey-virtual-key: vk-GROK-KEY
-    x-portkey-trace-id: drupal-weekly-{date}
+    x-portkey-trace-id: drupal-news-{date}
 ```
 
 ---

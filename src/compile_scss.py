@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Simple SCSS compiler for Drupal Weekly viewer.
+Simple SCSS compiler for Drupal News viewer.
 
 Compiles SCSS files from static/scss/ to static/css/
 """
@@ -126,7 +126,7 @@ def main():
     import argparse
 
     parser = argparse.ArgumentParser(
-        description='Compile SCSS files to CSS for Drupal Weekly viewer'
+        description='Compile SCSS files to CSS for Drupal News viewer'
     )
     parser.add_argument(
         '--watch',

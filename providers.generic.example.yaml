@@ -19,7 +19,7 @@ providers:
     headers:
       Authorization: Bearer ${OPENROUTER_API_KEY}
       HTTP-Referer: https://your-site.com  # Optional
-      X-Title: Drupal Weekly Aggregator  # Optional
+      X-Title: Drupal News Aggregator  # Optional
 
   # Example 2: Together AI
   together:

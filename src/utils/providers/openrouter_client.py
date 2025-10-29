@@ -36,7 +36,7 @@ def generate_summary(
     request_headers = {
         "Authorization": f"Bearer {api_key}",
         "Content-Type": "application/json",
-        "HTTP-Referer": "https://github.com/drupal-weekly",
+        "HTTP-Referer": "https://github.com/drupal-news",
         "X-Title": "Drupal News Aggregator"
     }
 

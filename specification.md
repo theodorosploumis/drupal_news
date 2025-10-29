@@ -4,7 +4,7 @@
 
 ## 0. One-liner
 
-Automated weekly Drupal aggregator: collect, normalize, cache, validate, summarize via selectable LLMs (OpenAI, Anthropic, Gemini, Ollama, LM Studio, Qwen, Grok, DeepSeek, OpenRouter), emit Markdown reports, email results, and log metrics.
+Automated Drupal news aggregator: collect, normalize, cache, validate, summarize via selectable LLMs (OpenAI, Anthropic, Gemini, Ollama, LM Studio, Qwen, Grok, DeepSeek, OpenRouter), emit Markdown reports, email results, and log metrics.
 
 ---
 
@@ -16,7 +16,7 @@ Automated weekly Drupal aggregator: collect, normalize, cache, validate, summari
 * Summarize content through pluggable AI models.
 * Cache data to minimize redundant fetches.
 * Validate and ensure reference integrity.
-* Email the weekly summary with a PDF attachment.
+* Email the news summary with a PDF attachment.
 * Collect metrics and maintain logs.
 * Calculate the costs for each AI run.
 * Create basic md files for help (README.md, USAGE.md, PROVIDERS.md etc). Put everything except README.md under `docs/` folder.
@@ -83,7 +83,7 @@ Created under `runs/YYYY-MM-DD/`:
 ## 4. Directory layout
 
 ```
-drupal-weekly/
+drupal-news/
   index.py
   src/
     rss_reader.py
@@ -138,7 +138,7 @@ SMTP_PORT=587
 SMTP_USER=postmaster@example.com
 SMTP_PASS=REDACTED
 MAIL_TO=news@example.com
-MAIL_FROM=Drupal Weekly <postmaster@example.com>
+MAIL_FROM=Drupal News <postmaster@example.com>
 
 OPENAI_API_KEY=
 ANTHROPIC_API_KEY=
@@ -176,10 +176,10 @@ CACHE_TTL_DAYS=21
   "http": {
     "timeout_sec": 20,
     "retries": 2,
-    "ua": "DrupalWeeklyBot/1.0"
+    "ua": "DrupalNewsBot/1.0"
   },
   "email": {
-    "subject_prefix": "[Drupal Weekly]",
+    "subject_prefix": "[Drupal News]",
     "attach_summary": true
   },
   "markdown": {
@@ -253,7 +253,7 @@ providers:
 | `ai_summarizer.py`      | Summarize via LLM provider            |
 | `process_logger.py`     | Structured logging                    |
 | `email_sender.py`       | Send email with results               |
-| `scheduler.py`          | Internal weekly scheduler             |
+| `scheduler.py`          | Internal scheduler                    |
 | `data_cleaner.py`       | Rotate and compress old runs/logs     |
 | `validator.py`          | Validate schema and links             |
 | `cache_manager.py`      | Persistent caching with SQLite        |
@@ -337,11 +337,11 @@ Flags:
 
 ## 10. Email
 
-Subject: `[Drupal Weekly] YYYY-MM-DD`
+Subject: `[Drupal News] YYYY-MM-DD`
 Body:
 
 ```
-Drupal Weekly for YYYY-MM-DD attached.
+Drupal News for YYYY-MM-DD attached.
 Generated at HH:MM (Europe/Athens).
 Sources: drupal.org verified.
 ```
@@ -548,5 +548,5 @@ def main():
 
 ## 21. Summary
 
-A modular, cron- or scheduler-ready Python system that autonomously compiles Drupal’s weekly updates, cleans itself, and works with multiple AI models including local and remote inference endpoints.
+A modular, cron- or scheduler-ready Python system that autonomously compiles Drupal news updates, cleans itself, and works with multiple AI models including local and remote inference endpoints.
 It’s reproducible, reference-linked, and silent—no external alerts, just clean artifacts and logs.

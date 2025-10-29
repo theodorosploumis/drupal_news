@@ -98,5 +98,5 @@ providers:
 #     api_url: http://localhost:4000
 #     headers:
 #       user: drupal-aggregator
-#       tags: weekly-report
+#       tags: news-report
 #       team: content-team

@@ -3,7 +3,7 @@ import importlib
 from typing import List, Dict, Any, Optional
 from pathlib import Path
 import time
-from markdown_converter import items_to_text
+from drupal_news.markdown_converter import items_to_text
 
 
 SUMMARIZER_PROMPT_TEMPLATE = """

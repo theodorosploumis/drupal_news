@@ -80,7 +80,7 @@ generic:
   headers:
     Authorization: Bearer ${OPENROUTER_API_KEY}
     HTTP-Referer: https://your-site.com  # Optional
-    X-Title: Drupal Weekly  # Optional
+    X-Title: Drupal News  # Optional
 ```
 
 **Popular OpenRouter models:**
@@ -226,8 +226,8 @@ generic:
   api_url: https://openrouter.ai/api/v1
   headers:
     Authorization: Bearer ${OPENROUTER_API_KEY}
-    HTTP-Referer: https://drupal-weekly.example.com
-    X-Title: Drupal Weekly Aggregator
+    HTTP-Referer: https://drupal-news.example.com
+    X-Title: Drupal News Aggregator
     X-Custom-Header: custom-value
 ```
 

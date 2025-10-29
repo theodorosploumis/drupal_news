@@ -80,7 +80,7 @@ def main():
         run_aggregator,
         trigger=trigger,
         args=[args.provider, args.model, args.email == "yes", args.days],
-        id="drupal_weekly",
+        id="drupal_news",
         name="Drupal Aggregator Aggregator"
     )
 

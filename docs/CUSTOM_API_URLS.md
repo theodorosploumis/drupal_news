@@ -77,7 +77,7 @@ grok:
   headers:
     x-portkey-api-key: pk-***
     x-portkey-virtual-key: vk-***
-    x-portkey-trace-id: drupal-weekly-{date}
+    x-portkey-trace-id: drupal-news-{date}
     x-portkey-metadata: '{"source":"drupal-aggregator"}'
 ```
 
@@ -185,7 +185,7 @@ openai:
   api_url: http://localhost:4000
   headers:
     user: drupal-aggregator
-    tags: weekly-report
+    tags: news-report
 ```
 
 **LiteLLM with Authentication:**

@@ -3,9 +3,9 @@ import feedparser
 import httpx
 from typing import List, Dict, Any, Optional
 from datetime import datetime
-from utils.timebox import parse_date, is_within_timeframe
-from utils.html_norm import strip_html_tags, clean_text, truncate_text
-from cache_manager import CacheManager
+from drupal_news.utils.timebox import parse_date, is_within_timeframe
+from drupal_news.utils.html_norm import strip_html_tags, clean_text, truncate_text
+from drupal_news.cache_manager import CacheManager
 
 
 def fetch_rss(
@@ -15,7 +15,7 @@ def fetch_rss(
     cache: Optional[CacheManager] = None,
     timeout: int = 20,
     retries: int = 2,
-    user_agent: str = "DrupalWeeklyBot/1.0"
+    user_agent: str = "DrupalNewsBot/1.0"
 ) -> List[Dict[str, Any]]:
     """
     Fetch and normalize RSS feeds.

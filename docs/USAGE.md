@@ -4,10 +4,10 @@
 
 ### 1. Full Pipeline (Fetch + AI + Email)
 ```bash
-# Weekly report with Anthropic
+# News report with Anthropic
 ./index.py --provider anthropic
 
-# Biweekly report with OpenAI
+# Binews report with OpenAI
 ./index.py --provider openai --days 14
 
 # Monthly report without email
@@ -129,7 +129,7 @@ runs/
 
 ## Cron Automation
 
-Schedule a weekly summary every Monday at 07:00 local time:
+Schedule a news summary every Monday at 07:00 local time:
 
 ```
 0 7 * * MON /usr/bin/env bash -lc 'cd /srv/Samsung4T/Tools/AI/drupal_news/claude && source venv/bin/activate && PYTHONPATH=src python index.py --provider anthropic --email yes'

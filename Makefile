@@ -1,7 +1,7 @@
 .PHONY: help install scss scss-watch viewer clean
 
 help:
-	@echo "Drupal Weekly - Available Commands"
+	@echo "Drupal News - Available Commands"
 	@echo ""
 	@echo "  make install     - Install all dependencies"
 	@echo "  make scss        - Compile SCSS to CSS (one-time)"

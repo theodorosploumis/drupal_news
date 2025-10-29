@@ -15,22 +15,22 @@ import os
 import json
 
 # Import modules
-from cache_manager import CacheManager
-from process_logger import get_logger
-from rss_reader import fetch_rss
-from webpage_reader import fetch_pages
-from validator import validate_items, validate_summary
-from markdown_converter import write_parsed_md, write_summary_md
-from ai_summarizer import summarize, summarize_with_fallback, generate_placeholder_summary
-from email_sender import send_report, write_email_log
-from pdf_generator import generate_summary_pdf
-from metrics_collector import collect_metrics
-from pipeline_integrity import verify_run_simple
-from data_cleaner import run_cleanup
-from utils.timebox import days_ago, get_iso_timestamp, now_in_tz, get_period_label
-from utils.dedupe import dedupe_items
-from utils.io_safe import safe_write_json, safe_read_json, safe_read_yaml, ensure_dir
-from utils.md_config_parser import merge_sources_config
+from drupal_news.cache_manager import CacheManager
+from drupal_news.process_logger import get_logger
+from drupal_news.rss_reader import fetch_rss
+from drupal_news.webpage_reader import fetch_pages
+from drupal_news.validator import validate_items, validate_summary
+from drupal_news.markdown_converter import write_parsed_md, write_summary_md
+from drupal_news.ai_summarizer import summarize, summarize_with_fallback, generate_placeholder_summary
+from drupal_news.email_sender import send_report, write_email_log
+from drupal_news.pdf_generator import generate_summary_pdf
+from drupal_news.metrics_collector import collect_metrics
+from drupal_news.pipeline_integrity import verify_run_simple
+from drupal_news.data_cleaner import run_cleanup
+from drupal_news.utils.timebox import days_ago, get_iso_timestamp, now_in_tz, get_period_label
+from drupal_news.utils.dedupe import dedupe_items
+from drupal_news.utils.io_safe import safe_write_json, safe_read_json, safe_read_yaml, ensure_dir
+from drupal_news.utils.md_config_parser import merge_sources_config
 
 
 # Exit codes

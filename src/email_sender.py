@@ -90,7 +90,7 @@ def send_report(
     run_date: str,
     summary_path: Path,
     timezone: str,
-    period_label: str = "Weekly"
+    period_label: str = "News"
 ) -> bool:
     """
     Send Drupal report email.
@@ -101,7 +101,7 @@ def send_report(
         run_date: Run date string (YYYY-MM-DD)
         summary_path: Path to summary.md file
         timezone: Timezone name
-        period_label: Period label (e.g., "Weekly", "Biweekly")
+        period_label: Period label (e.g., "News", "Binews")
 
     Returns:
         True if sent successfully
@@ -188,3 +188,78 @@ Body:
 
     with open(output_path, 'w', encoding='utf-8') as f:
         f.write(log_content)
+
+
+def main():
+    """Main entry point for drupal-news-email CLI."""
+    import argparse
+    from pathlib import Path
+    
+    parser = argparse.ArgumentParser(description='Send Drupal News email reports')
+    parser.add_argument('--latest', action='store_true', help='Send latest report')
+    parser.add_argument('--days', type=int, default=7, help='Days back to check (default: 7)')
+    parser.add_argument('--run-dir', type=str, help='Specific run directory to send')
+    
+    args = parser.parse_args()
+    
+    print("Email sender CLI")
+    print("=" * 60)
+    
+    # Load environment
+    from dotenv import load_dotenv
+    import os
+    
+    env_path = Path.home() / ".drupal-news" / ".env"
+    if not env_path.exists():
+        env_path = Path(".env")
+    
+    load_dotenv(env_path)
+    env = os.environ
+    
+    # Determine run directory
+    if args.run_dir:
+        run_path = Path(args.run_dir)
+    elif args.latest:
+        runs_dir = Path("runs")
+        if not runs_dir.exists():
+            print("Error: runs/ directory not found")
+            return 1
+        
+        # Find latest run
+        run_dirs = sorted([d for d in runs_dir.iterdir() if d.is_dir()], reverse=True)
+        if not run_dirs:
+            print("Error: No runs found")
+            return 1
+        
+        run_path = run_dirs[0]
+    else:
+        print("Error: Specify --latest or --run-dir")
+        return 1
+    
+    print(f"Using run: {run_path}")
+    
+    # Check for summary
+    summary_path = run_path / "summary.md"
+    if not summary_path.exists():
+        print(f"Error: {summary_path} not found")
+        return 1
+    
+    # Send email
+    print("\nSending email...")
+    result = send_report(
+        run_dir=run_path,
+        env=env,
+        days=args.days
+    )
+    
+    if result:
+        print("✓ Email sent successfully")
+        return 0
+    else:
+        print("✗ Email failed")
+        return 1
+
+
+if __name__ == "__main__":
+    import sys
+    sys.exit(main())

@@ -1,8 +1,8 @@
 """Markdown converter for Drupal Aggregator."""
 from typing import List, Dict, Any
 from pathlib import Path
-from utils.timebox import format_datetime
-from utils.io_safe import safe_write_text
+from drupal_news.utils.timebox import format_datetime
+from drupal_news.utils.io_safe import safe_write_text
 
 
 def generate_parsed_md(

@@ -1,0 +1,73 @@
+{
+  "timeframe_days": 7,
+  "run_root": "runs",
+  "sources": {
+    "rss": [
+      "https://www.drupal.org/node/3060/release/feed",
+      "https://www.drupal.org/section-blog/all/feed",
+      "https://www.drupal.org/project/issues/rss/ai_initiative",
+      "https://www.drupal.org/taxonomy/term/9988/feed",
+      "https://www.drupal.org/planet/rss.xml",
+      "https://events.drupal.org/rss.xml",
+      "https://www.drupal.org/security/all/rss.xml"
+    ],
+    "pages": [
+      {
+        "_comment": "Example: Drupal News with custom selectors",
+        "url": "https://www.drupal.org/news",
+        "name": "Drupal News",
+        "base_url": "https://www.drupal.org",
+        "selectors": {
+          "container": "article",
+          "title": "h2",
+          "link": "h2 a",
+          "description": ".field--name-body",
+          "date": "time"
+        }
+      },
+      {
+        "_comment": "Example: Drupal Planet with ID selector",
+        "url": "https://www.drupal.org/planet",
+        "name": "Drupal Planet",
+        "base_url": "https://www.drupal.org",
+        "selectors": {
+          "container": "#content article",
+          "title": "h2.node-title",
+          "link": "h2.node-title a",
+          "description": "div.content p:first-of-type",
+          "date": "span.date"
+        }
+      },
+      {
+        "_comment": "Example: Using class selectors",
+        "url": "https://www.drupal.org/project/drupal/releases",
+        "name": "Drupal Releases",
+        "base_url": "https://www.drupal.org",
+        "selectors": {
+          "container": ".view-project-release-by-project .views-row",
+          "title": "h2.views-field-title",
+          "link": ".views-field-title a",
+          "description": ".field--name-body",
+          "date": "time"
+        }
+      },
+      {
+        "_comment": "Example: Backward compatible - simple URL string (no selectors)",
+        "url": "https://www.drupal.org/community"
+      }
+    ]
+  },
+  "http": {
+    "timeout_sec": 20,
+    "retries": 2,
+    "ua": "DrupalNewsBot/1.0"
+  },
+  "email": {
+    "subject_prefix": "[Drupal Newsletter]",
+    "attach_summary": true,
+    "attachment_format": "pdf"
+  },
+  "markdown": {
+    "table_max_rows": 200
+  }
+}

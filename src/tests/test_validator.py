@@ -1,6 +1,6 @@
 """Tests for validator module."""
 import pytest
-from validator import validate_url, validate_item, validate_items
+from drupal_news.validator import validate_url, validate_item, validate_items
 
 
 def test_validate_url():

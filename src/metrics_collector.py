@@ -1,8 +1,8 @@
 """Metrics collector for Drupal Aggregator."""
 from pathlib import Path
 from typing import Dict, Any, List
-from utils.io_safe import safe_write_json
-from utils.timebox import get_iso_timestamp
+from drupal_news.utils.io_safe import safe_write_json
+from drupal_news.utils.timebox import get_iso_timestamp
 
 
 def collect_metrics(
