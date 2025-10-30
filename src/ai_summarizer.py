@@ -3,7 +3,7 @@ import importlib
 from typing import List, Dict, Any, Optional
 from pathlib import Path
 import time
-from drupal_news.markdown_converter import items_to_text
+from drupal_news.output_formatter import items_to_text
 
 
 SUMMARIZER_PROMPT_TEMPLATE = """
@@ -78,15 +78,21 @@ def get_provider_client(provider_name: str, client_name: str = None):
         Provider client module
     """
     try:
-        # Use client_name if provided, otherwise use provider_name
-        module_name = client_name if client_name else f"{provider_name}_client"
-        # Remove _client suffix if already present
-        if not module_name.endswith('_client'):
-            module_name = f"{module_name}_client"
-        module = importlib.import_module(f"drupal_news.utils.providers.{module_name}")
+        # Use unified client for all providers
+        module = importlib.import_module(f"drupal_news.utils.providers.unified_client")
         return module
     except ImportError as e:
-        raise ImportError(f"Provider '{provider_name}' (client: {client_name or provider_name}) not found: {e}")
+        # Fallback to specific provider clients if unified client not available
+        try:
+            # Use client_name if provided, otherwise use provider_name
+            module_name = client_name if client_name else f"{provider_name}_client"
+            # Remove _client suffix if already present
+            if not module_name.endswith('_client'):
+                module_name = f"{module_name}_client"
+            module = importlib.import_module(f"drupal_news.utils.providers.{module_name}")
+            return module
+        except ImportError:
+            raise ImportError(f"Provider '{provider_name}' (client: {client_name or provider_name}) not found: {e}")
 
 
 
@@ -176,6 +182,7 @@ def summarize(
     # Prepare kwargs for provider (prompt injected per request)
     base_kwargs = {
         "model": model,
+        "provider": provider,  # Pass provider to unified client
         "temperature": temperature
     }
 
@@ -193,12 +200,14 @@ def summarize(
             items,
             render_prompt,
             chunk_size,
-            base_kwargs
+            base_kwargs,
+            provider
         )
     else:
         request_kwargs = dict(base_kwargs)
         request_kwargs["prompt"] = prompt
         try:
+            # For unified client, we pass the provider as a parameter
             summary_result = client.generate_summary(**request_kwargs)
         except Exception as e:
             raise RuntimeError(f"Summarization failed: {str(e)}")
@@ -217,7 +226,8 @@ def _summarize_chunked(
     items: List[Dict[str, Any]],
     render_prompt,
     chunk_size: int,
-    base_kwargs: Dict[str, Any]
+    base_kwargs: Dict[str, Any],
+    provider: str
 ) -> Dict[str, Any]:
     """Summarize items in chunks for large datasets."""
     summaries = []
@@ -245,7 +255,7 @@ def _summarize_chunked(
         "text": combined_text,
         "tokens": total_tokens,
         "model": base_kwargs.get("model"),
-        "provider": client.__name__.split(".")[-1].replace("_client", ""),
+        "provider": provider,  # Use the provider parameter instead of extracting from client name
         "chunked": True
     }
 

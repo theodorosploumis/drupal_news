@@ -17,19 +17,15 @@ import json
 # Import modules
 from drupal_news.cache_manager import CacheManager
 from drupal_news.process_logger import get_logger
-from drupal_news.rss_reader import fetch_rss
-from drupal_news.webpage_reader import fetch_pages
+from drupal_news.content_reader import fetch_content
 from drupal_news.validator import validate_items, validate_summary
-from drupal_news.markdown_converter import write_parsed_md, write_summary_md
+from drupal_news.output_formatter import write_parsed_md, write_summary_md, generate_summary_pdf
 from drupal_news.ai_summarizer import summarize, summarize_with_fallback, generate_placeholder_summary
 from drupal_news.email_sender import send_report, write_email_log
-from drupal_news.pdf_generator import generate_summary_pdf
 from drupal_news.metrics_collector import collect_metrics
 from drupal_news.pipeline_integrity import verify_run_simple
 from drupal_news.data_cleaner import run_cleanup
-from drupal_news.utils.timebox import days_ago, get_iso_timestamp, now_in_tz, get_period_label
-from drupal_news.utils.dedupe import dedupe_items
-from drupal_news.utils.io_safe import safe_write_json, safe_read_json, safe_read_yaml, ensure_dir
+from drupal_news.utils.consolidated_utils import days_ago, get_iso_timestamp, now_in_tz, get_period_label, dedupe_items, safe_write_json, safe_read_json, safe_read_yaml, ensure_dir
 from drupal_news.utils.md_config_parser import merge_sources_config
 from drupal_news.utils.config_loader import get_config, load_config as load_unified_config, load_providers_config as load_unified_providers
 
@@ -239,34 +235,22 @@ def main():
             cache = CacheManager(env["CACHE_DB_PATH"], env["CACHE_TTL_DAYS"])
             logger.info("cache", "Cache initialized")
 
-            # Fetch RSS feeds
-            logger.info("rss_reader", "Fetching RSS feeds...")
-            rss_items = fetch_rss(
-                config["sources"]["rss"],
-                since,
-                timezone,
-                cache,
+            # Fetch content from both RSS feeds and web pages
+            logger.info("content_reader", "Fetching content from RSS feeds and web pages...")
+            all_items = fetch_content(
+                rss_urls=config["sources"]["rss"],
+                page_sources=config["sources"]["pages"],
+                since=since,
+                timezone=timezone,
+                cache=cache,
                 timeout=config["http"]["timeout_sec"],
                 retries=config["http"]["retries"],
                 user_agent=config["http"]["user_agent"]
             )
-            logger.info("rss_reader", f"Fetched {len(rss_items)} RSS items")
-
-            # Fetch web pages
-            logger.info("webpage_reader", "Fetching web pages...")
-            page_items = fetch_pages(
-                config["sources"]["pages"],
-                since,
-                timezone,
-                cache,
-                timeout=config["http"]["timeout_sec"],
-                retries=config["http"]["retries"],
-                user_agent=config["http"]["user_agent"]
-            )
-            logger.info("webpage_reader", f"Fetched {len(page_items)} page items")
+            logger.info("content_reader", f"Fetched {len(all_items)} items")
 
             # Deduplicate
-            all_items = dedupe_items(rss_items + page_items)
+            all_items = dedupe_items(all_items)
             logger.info("dedupe", f"Total unique items: {len(all_items)}")
 
             # Validate

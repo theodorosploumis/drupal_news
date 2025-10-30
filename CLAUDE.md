@@ -99,9 +99,8 @@ drupal-news/
     __init__.py
     index.py                 # Main orchestrator
     cli.py                   # CLI entry points
-    rss_reader.py
-    webpage_reader.py
-    markdown_converter.py
+    content_reader.py        # Unified content reader (RSS + web pages)
+    output_formatter.py      # Output formatter (Markdown + PDF)
     ai_summarizer.py
     process_logger.py
     email_sender.py
@@ -111,18 +110,14 @@ drupal-news/
     cache_manager.py
     metrics_collector.py
     pipeline_integrity.py
-    pdf_generator.py         # PDF report generation
     viewer.py                # Flask web interface
-    generic_client.py        # Generic OpenAI-compatible API support
 
     utils/
-      timebox.py
-      dedupe.py
-      html_norm.py
-      io_safe.py
+      consolidated_utils.py  # Consolidated utilities (timebox, dedupe, html_norm, io_safe)
       schema.py
       providers/
-        openai_client.py
+        unified_client.py    # Unified AI client for all providers
+        openai_client.py     # Legacy provider clients (fallback)
         anthropic_client.py
         gemini_client.py
         ollama_client.py
@@ -319,9 +314,8 @@ CACHE_TTL_DAYS=21
 | ----------------------- | ------------------------------------- |
 | `index.py`              | Main orchestrator                     |
 | `cli.py`                | CLI entry points for package commands |
-| `rss_reader.py`         | Fetch and normalize RSS feeds         |
-| `webpage_reader.py`     | Scrape and normalize HTML pages       |
-| `markdown_converter.py` | Generate `parsed.md` and `summary.md` |
+| `content_reader.py`     | Fetch and normalize RSS feeds and HTML pages |
+| `output_formatter.py`   | Generate `parsed.md` and `summary.md`, PDF reports |
 | `ai_summarizer.py`      | Summarize via LLM provider            |
 | `process_logger.py`     | Structured logging                    |
 | `email_sender.py`       | Send email with results               |
@@ -331,9 +325,7 @@ CACHE_TTL_DAYS=21
 | `cache_manager.py`      | Persistent caching with SQLite        |
 | `metrics_collector.py`  | Save metrics and stats                |
 | `pipeline_integrity.py` | Post-run checks and exit codes        |
-| `pdf_generator.py`      | Generate PDF reports from Markdown    |
 | `viewer.py`             | Flask web interface for browsing runs |
-| `generic_client.py`     | Support for any OpenAI-compatible API |
 
 ---
 
@@ -347,15 +339,15 @@ CACHE_TTL_DAYS=21
 2. **cache_manager.py**
 
    * Load or warm cache.
-3. **rss_reader.py** & **webpage_reader.py**
+3. **content_reader.py**
 
-   * Fetch and normalize content.
+   * Fetch and normalize content from both RSS feeds and web pages.
 4. **validator.py**
 
    * Validate URLs, schema, and link presence.
-5. **markdown_converter.py**
+5. **output_formatter.py**
 
-   * Write `parsed.md`.
+   * Write `parsed.md` and generate `summary.md`.
 6. **ai_summarizer.py**
 
    * Generate `summary.md` using chosen AI provider.

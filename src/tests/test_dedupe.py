@@ -1,6 +1,6 @@
 """Tests for deduplication utilities."""
 import pytest
-from drupal_news.utils.dedupe import dedupe_items, dedupe_by_url
+from drupal_news.utils.consolidated_utils import dedupe_items, dedupe_by_url
 
 
 def test_dedupe_items():
