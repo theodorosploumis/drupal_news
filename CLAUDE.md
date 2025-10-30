@@ -72,6 +72,7 @@ Created under `runs/YYYY-MM-DD/`:
 
 * `parsed.md` — raw collected data
 * `summary.md` — human-readable AI summary
+* `summary.pdf` — PDF version of summary (generated automatically)
 * `sources.json` — normalized source data
 * `validation_report.json` — link and schema integrity
 * `metrics.json` — run metrics and stats
@@ -84,8 +85,20 @@ Created under `runs/YYYY-MM-DD/`:
 
 ```
 drupal-news/
-  index.py
-  src/
+  index.py                    # Main wrapper script
+  config.yml                  # Unified configuration file
+  pyproject.toml             # Python package configuration
+  .env                       # Environment variables
+  README.md                  # Project documentation
+  release.sh                 # Release automation script
+  build.sh                   # Package build script
+  build_package.py           # Package builder
+  compile_scss.py            # SCSS compilation for web viewer
+
+  src/                       # Python package source
+    __init__.py
+    index.py                 # Main orchestrator
+    cli.py                   # CLI entry points
     rss_reader.py
     webpage_reader.py
     markdown_converter.py
@@ -98,7 +111,10 @@ drupal-news/
     cache_manager.py
     metrics_collector.py
     pipeline_integrity.py
-    webpage_reader.py
+    pdf_generator.py         # PDF report generation
+    viewer.py                # Flask web interface
+    generic_client.py        # Generic OpenAI-compatible API support
+
     utils/
       timebox.py
       dedupe.py
@@ -115,21 +131,157 @@ drupal-news/
         grok_client.py
         deepseek_client.py
         openrouter_client.py
-  config.json
-  providers.yaml
-  .env
-  requirements.txt
-  README.md
-  runs/
+        generic_client.py
+
+  docs/                      # Documentation
+    USAGE.md
+    PROVIDERS.md
+    CUSTOM_API_URLS.md
+    GENERIC_PROVIDER.md
+    PACKAGING.md
+    PAGE_SELECTORS.md
+    PROXY_QUICKSTART.md
+    RELEASING.md
+
+  runs/                      # Generated run data
     YYYY-MM-DD/
-  tests/
+      parsed.md
+      summary.md
+      summary.pdf           # PDF version of summary
+      sources.json
+      validation_report.json
+      metrics.json
+      run.log
+      email.txt
+
+  tests/                     # Test suite
 ```
 
 ---
 
 ## 5. Configuration
 
-### `.env`
+### Unified Configuration (`config.yml`)
+
+The project uses a single unified configuration file that combines all settings:
+
+```yaml
+# Core Settings
+core:
+  timeframe_days: 7
+  run_root: runs
+  http:
+    timeout_sec: 20
+    retries: 2
+    user_agent: DrupalNewsBot/1.0
+  email:
+    subject_prefix: "[Drupal Newsletter]"
+    attach_summary: true
+    attachment_format: pdf  # pdf or html
+  markdown:
+    table_max_rows: 200
+
+# SMTP Configuration (supports environment variables)
+smtp:
+  host: ${SMTP_HOST}
+  port: ${SMTP_PORT}
+  user: ${SMTP_USER}
+  password: ${SMTP_PASS}
+  timeout: ${SMTP_TIMEOUT}
+  mail_from: ${MAIL_FROM}
+  mail_to: ${MAIL_TO}
+
+# Content Sources
+sources:
+  rss:
+    - https://www.drupal.org/node/3060/release/feed
+    - https://www.drupal.org/section-blog/all/feed
+    - https://www.drupal.org/project/issues/rss/ai_initiative
+    - https://www.drupal.org/taxonomy/term/9988/feed
+    - https://www.drupal.org/planet/rss.xml
+    - https://events.drupal.org/rss.xml
+    - https://www.drupal.org/security/all/rss.xml
+
+  pages:
+    - url: https://www.drupal.org/news
+      name: Drupal News
+      base_url: https://www.drupal.org
+      selectors:
+        container: article
+        title: h2
+        link: h2 a
+        description: .field--name-body
+        date: time
+
+# AI Providers Configuration
+ai:
+  default_provider: openrouter
+  providers:
+    openai:
+      client: openai_client
+      model: gpt-4.1-mini
+      temperature: 0.2
+    anthropic:
+      client: anthropic_client
+      model: claude-haiku-4-5-20251001
+      temperature: 0.2
+    gemini:
+      client: gemini_client
+      model: gemini-1.5-pro
+      temperature: 0.2
+    ollama:
+      client: ollama_client
+      model: qwen2.5:7b-instruct
+      temperature: 0.2
+    lmstudio:
+      client: lmstudio_client
+      model: qwen2.5:7b-instruct
+      temperature: 0.2
+    qwen:
+      client: qwen_client
+      model: qwen2.5-7b-chat
+      temperature: 0.2
+    grok:
+      client: grok_client
+      model: grok-4-fast-reasoning
+      temperature: 0.2
+    deepseek:
+      client: deepseek_client
+      model: deepseek-chat
+      temperature: 0.2
+    openrouter:
+      client: openrouter_client
+      model: openai/gpt-oss-20b:free
+      temperature: 0.2
+      api_url: https://openrouter.ai/api/v1
+    openrouter_minimax:
+      client: generic_client
+      model: minimax/minimax-m2:free
+      temperature: 0.2
+      api_url: https://openrouter.ai/api/v1
+
+# AI Prompt Template
+prompt: |
+  # Drupal Summarizer Prompt
+
+  [Full prompt template from config.yml]
+
+# API Keys (environment variables recommended)
+api_keys:
+  ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+  OPENAI_API_KEY: ${OPENAI_API_KEY}
+  GOOGLE_API_KEY: ${GOOGLE_API_KEY}
+  OPENROUTER_API_KEY: ${OPENROUTER_API_KEY}
+  PERPLEXITY_API_KEY: ${PERPLEXITY_API_KEY}
+  XAI_API_KEY: ${XAI_API_KEY}
+  GROQ_API_KEY: ${GROQ_API_KEY}
+  MISTRAL_API_KEY: ${MISTRAL_API_KEY}
+  AZURE_OPENAI_API_KEY: ${AZURE_OPENAI_API_KEY}
+  OLLAMA_API_KEY: ${OLLAMA_API_KEY}
+  GITHUB_API_KEY: ${GITHUB_API_KEY}
+```
+
+### Environment Variables (`.env`)
 
 ```
 TIMEZONE=Europe/Athens
@@ -137,107 +289,26 @@ SMTP_HOST=smtp.example.com
 SMTP_PORT=587
 SMTP_USER=postmaster@example.com
 SMTP_PASS=REDACTED
+SMTP_TIMEOUT=30
 MAIL_TO=news@example.com
 MAIL_FROM=Drupal News <postmaster@example.com>
 
 OPENAI_API_KEY=
 ANTHROPIC_API_KEY=
 GOOGLE_API_KEY=
-OLLAMA_BASE_URL=http://localhost:11434
-LMSTUDIO_BASE_URL=http://localhost:1234
-QWEN_API_KEY=
-GROK_API_KEY=
-DEEPSEEK_API_KEY=
 OPENROUTER_API_KEY=
+PERPLEXITY_API_KEY=
+XAI_API_KEY=
+GROQ_API_KEY=
+MISTRAL_API_KEY=
+AZURE_OPENAI_API_KEY=
+OLLAMA_API_KEY=
+GITHUB_API_KEY=
 
 LOG_RETENTION_DAYS=45
 RUN_RETENTION_DAYS=90
 CACHE_DB_PATH=./cache/cache.db
 CACHE_TTL_DAYS=21
-```
-
-### `config.json`
-
-```json
-{
-  "timeframe_days": 7,
-  "run_root": "runs",
-  "sources": {
-    "rss": [
-      "https://www.drupal.org/project/issues/rss/ai_initiative",
-      "https://www.drupal.org/taxonomy/term/9988/feed"
-    ],
-    "pages": [
-      "https://www.drupal.org/news",
-      "https://www.drupal.org/planet",
-      "https://www.drupal.org/project/drupal/releases"
-    ]
-  },
-  "http": {
-    "timeout_sec": 20,
-    "retries": 2,
-    "ua": "DrupalNewsBot/1.0"
-  },
-  "email": {
-    "subject_prefix": "[Drupal News]",
-    "attach_summary": true
-  },
-  "markdown": {
-    "table_max_rows": 200
-  }
-}
-```
-
-### `providers.yaml`
-
-```yaml
-default_provider: openai
-
-providers:
-  openai:
-    client: openai_client
-    model: gpt-4.1-mini
-    temperature: 0.2
-
-  anthropic:
-    client: anthropic_client
-    model: claude-3-5-sonnet
-    temperature: 0.2
-
-  gemini:
-    client: gemini_client
-    model: gemini-1.5-pro
-    temperature: 0.2
-
-  ollama:
-    client: ollama_client
-    model: qwen2.5:7b-instruct
-    temperature: 0.2
-
-  lmstudio:
-    client: lmstudio_client
-    model: qwen2.5:7b-instruct
-    temperature: 0.2
-
-  qwen:
-    client: qwen_client
-    model: qwen2.5-7b-chat
-    temperature: 0.2
-
-  grok:
-    client: grok_client
-    model: grok-beta
-    temperature: 0.2
-
-  deepseek:
-    client: deepseek_client
-    model: deepseek-chat
-    temperature: 0.2
-
-  openrouter:
-    client: openrouter_client
-    model: meta-llama/llama-3.1-8b-instruct
-    temperature: 0.2
 ```
 
 ---
@@ -247,6 +318,7 @@ providers:
 | Script                  | Responsibility                        |
 | ----------------------- | ------------------------------------- |
 | `index.py`              | Main orchestrator                     |
+| `cli.py`                | CLI entry points for package commands |
 | `rss_reader.py`         | Fetch and normalize RSS feeds         |
 | `webpage_reader.py`     | Scrape and normalize HTML pages       |
 | `markdown_converter.py` | Generate `parsed.md` and `summary.md` |
@@ -259,6 +331,9 @@ providers:
 | `cache_manager.py`      | Persistent caching with SQLite        |
 | `metrics_collector.py`  | Save metrics and stats                |
 | `pipeline_integrity.py` | Post-run checks and exit codes        |
+| `pdf_generator.py`      | Generate PDF reports from Markdown    |
+| `viewer.py`             | Flask web interface for browsing runs |
+| `generic_client.py`     | Support for any OpenAI-compatible API |
 
 ---
 
@@ -305,7 +380,9 @@ providers:
 ## 8. AI summarizer details
 
 * Dynamically loads provider module based on CLI flag.
-* Fallback order: `openai → anthropic → ollama → qwen → openrouter`.
+* Supports all major providers: `openai`, `anthropic`, `gemini`, `ollama`, `lmstudio`, `qwen`, `grok`, `deepseek`, `openrouter`
+* Generic provider support for any OpenAI-compatible API
+* Fallback order: `openai → anthropic → ollama → qwen → openrouter → generic`
 * Handles retry on truncated output.
 * Supports chunked summarization if input > 200 items.
 * Logs provider, model, token count, and response duration.
@@ -313,25 +390,65 @@ providers:
 * Validates `[source](...)` presence in generated Markdown.
 * Exclude modules from the summary if their description starts with "Here, write an introduction that summarizes the purpose and function of this project".
 * Exclude dev releases.
+* Generic provider allows custom API endpoints with optional headers
 
 ---
 
 ## 9. CLI usage
 
+### Package Installation
+
+```bash
+# Install from source
+pip install -e .
+
+# Install with specific AI providers
+pip install -e .[openai,anthropic]
+
+# Install with all providers
+pip install -e .[all-providers]
+
+# Install development dependencies
+pip install -e .[dev]
 ```
+
+### Available Commands
+
+```bash
+# Main aggregator
+drupal-news --provider openrouter --model mistralai/mixtral-8x7b --email yes
+drupal-news --provider qwen --model qwen2.5-7b-chat --days 7
+drupal-news --provider grok
+drupal-news --provider deepseek
+
+# Scheduler
+drupal-news-scheduler --every friday --hour 9 --minute 5 --provider openai --email yes
+
+# Email sender
+drupal-news-email --run-dir runs/2025-10-30
+
+# Web viewer
+drupal-news-viewer --port 5000
+```
+
+### Direct Script Usage
+
+```bash
+# Using the wrapper script
 python3 index.py --provider openrouter --model mistralai/mixtral-8x7b --email yes
-python3 index.py --provider qwen --model qwen2.5-7b-chat --days 7
-python3 index.py --provider grok
-python3 index.py --provider deepseek
+
+# Using the package directly
+python3 -m drupal_news.index --provider qwen --model qwen2.5-7b-chat --days 7
 ```
 
-Flags:
+### Flags
 
-* `--provider` one of: openai, anthropic, gemini, ollama, lmstudio, qwen, grok, deepseek, openrouter
+* `--provider` one of: openai, anthropic, gemini, ollama, lmstudio, qwen, grok, deepseek, openrouter, generic
 * `--model` overrides provider default
 * `--days` set custom timeframe
 * `--email yes|no` enable or skip mail sending
-* `--outdir`, `--config`, `--providers`, `--env` for path overrides
+* `--outdir`, `--config`, `--env` for path overrides
+* `--api-url` custom API endpoint for generic provider
 
 ---
 
@@ -449,11 +566,17 @@ Uses `apscheduler` for recurring runs.
 * Markdown rendered to HTML with tables
 * All URLs converted to clickable links opening in new tabs
 * Security: `target="_blank" rel="noopener noreferrer"` on all links
+* SCSS-based styling with automatic compilation
+* Responsive design
 
 **Usage:**
 
 ```bash
-python3 viewer.py
+# Using the package command
+drupal-news-viewer --port 5000
+
+# Using the script directly
+python3 src/viewer.py
 # Open http://localhost:5000
 ```
 
@@ -461,15 +584,23 @@ python3 viewer.py
 * `/` - latest run
 * `/run/YYYY-MM-DD` - specific run
 * `/api/runs` - list available runs (JSON)
+* `/api/run/YYYY-MM-DD` - get specific run data (JSON)
 
 **Link Handling:**
 * Plain URLs in table cells automatically converted to `<a>` tags
 * All links open in new tab with security attributes
 * Prevents tab-nabbing attacks with `rel="noopener noreferrer"`
 
+**SCSS Support:**
+* Styles are written in SCSS and automatically compiled to CSS
+* Use `compile_scss.py` to manually compile SCSS files
+* Supports variables, nesting, and mixins for maintainable styling
+
 ---
 
 ## 17. Requirements
+
+### Core Dependencies
 
 ```
 python-dotenv>=1.0
@@ -484,23 +615,50 @@ apscheduler>=3.10
 jsonschema>=4.23
 sqlite-utils>=3.36
 loguru>=0.7
-pytest>=8.3
+pyyaml>=6.0
 flask>=3.0
 markdown>=3.5
+weasyprint>=66.0
+libsass>=0.23
+watchdog>=4.0
 
 Also, use venv for sandboxing.
 ```
 
-Optional SDKs:
+### Optional AI Provider SDKs
 
+Install as needed using extras:
+
+```bash
+# OpenAI
+pip install -e .[openai]
+
+# Anthropic
+pip install -e .[anthropic]
+
+# Google Gemini
+pip install -e .[google]
+
+# Alibaba Qwen
+pip install -e .[qwen]
+
+# xAI Grok
+pip install -e .[grok]
+
+# DeepSeek
+pip install -e .[deepseek]
+
+# All providers
+pip install -e .[all-providers]
 ```
-openai>=1.45
-anthropic>=0.34
-google-generativeai>=0.7
-dashscope>=1.17
-xai-sdk>=0.3
-deepseek>=0.2
+
+### Development Dependencies
+
+```bash
+pip install -e .[dev]
 ```
+
+Includes: pytest, pytest-cov, black, flake8, mypy, build, twine
 
 ---
 
