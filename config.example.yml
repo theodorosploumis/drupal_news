@@ -219,7 +219,7 @@ ai:
     # Generic - Perplexity
     perplexity:
       client: generic_client
-      model: llama-3.1-sonar-large-128k-online
+      model: sonar
       temperature: 0.2
       api_url: https://api.perplexity.ai
       headers:
