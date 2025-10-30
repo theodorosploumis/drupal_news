@@ -4,6 +4,11 @@ All notable changes to Drupal News Aggregator will be documented here.
 
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.0.5] - 2025-10-30
+
+Fix viewer, add smtp key on config.yaml
+
+
 ## [0.0.4] - 2025-10-30
 
 Fixing ua missing key
