@@ -12,6 +12,9 @@
 
 # Monthly report without email
 ./index.py --provider gemini --days 30 --email no
+
+# Check version (package installation)
+drupal-news --version
 ```
 
 ## Separate Fetch and Summarize

@@ -1,5 +1,6 @@
 """Email sender for Drupal Newsletter."""
 import smtplib
+import subprocess
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.base import MIMEBase
@@ -7,6 +8,7 @@ from email import encoders
 from pathlib import Path
 from typing import Optional
 import os
+import sys
 
 
 def send_email(
@@ -190,6 +192,47 @@ Body:
         f.write(log_content)
 
 
+def get_current_version() -> str:
+    """
+    Get the current version from git tag.
+
+    Returns:
+        String with the current git tag version, or "unknown" if not available
+    """
+    try:
+        # Try to get the current git tag
+        result = subprocess.run(
+            ["git", "describe", "--tags", "--abbrev=0"],
+            capture_output=True,
+            text=True,
+            cwd=Path(__file__).parent.parent
+        )
+        if result.returncode == 0:
+            version = result.stdout.strip()
+            if version.startswith('v'):
+                return version[1:]  # Remove 'v' prefix if present
+            return version
+        else:
+            # Fallback to checking the latest tag
+            result = subprocess.run(
+                ["git", "tag", "--sort=-version:refname"],
+                capture_output=True,
+                text=True,
+                cwd=Path(__file__).parent.parent
+            )
+            if result.returncode == 0:
+                tags = result.stdout.strip().split('\n')
+                if tags and tags[0]:
+                    version = tags[0]
+                    if version.startswith('v'):
+                        return version[1:]  # Remove 'v' prefix if present
+                    return version
+    except Exception:
+        pass
+
+    return "unknown"
+
+
 def main():
     """Main entry point for drupal-news-email CLI."""
     import argparse
@@ -199,9 +242,15 @@ def main():
     parser.add_argument('--latest', action='store_true', help='Send latest report')
     parser.add_argument('--days', type=int, default=7, help='Days back to check (default: 7)')
     parser.add_argument('--run-dir', type=str, help='Specific run directory to send')
-    
+    parser.add_argument('--version', action='store_true', help='Show current version and exit')
+
     args = parser.parse_args()
-    
+
+    # Handle --version flag
+    if args.version:
+        print(f"drupal-news-email version {get_current_version()}")
+        sys.exit(0)
+
     print("Email sender CLI")
     print("=" * 60)
     

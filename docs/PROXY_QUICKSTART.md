@@ -1,5 +1,18 @@
 # Proxy Quick Start Guide
 
+## Version Information
+
+You can check the current version of the Drupal News Aggregator using the `--version` flag with any CLI command:
+
+```bash
+drupal-news --version
+drupal-news-scheduler --version
+drupal-news-email --version
+drupal-news-viewer --version
+```
+
+This will display the current git tag version (e.g., "drupal-news version 0.0.6").
+
 ## LiteLLM (Self-Hosted)
 
 ### Setup in 5 minutes

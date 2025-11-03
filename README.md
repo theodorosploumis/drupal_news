@@ -30,6 +30,9 @@ drupal-news --dry-run
 
 # Or from source
 python3 index.py --dry-run
+
+# Check version
+drupal-news --version
 ```
 
 ## Configuration
@@ -187,6 +190,7 @@ Options:
   --env <path>            Custom .env path
   --outdir <path>         Custom output directory
   --verbose               Enable debug logging
+  --version               Show current version and exit
 ```
 
 ### drupal-news-scheduler
@@ -204,6 +208,7 @@ Options:
   --model <name>          Model override
   --email yes|no          Send email
   --days <n>              Number of days to aggregate
+  --version               Show current version and exit
 ```
 
 ### drupal-news-email
@@ -217,6 +222,7 @@ Options:
   --latest                Send latest report
   --run-dir <path>        Send specific run directory
   --days <n>              Days back to check (default: 7)
+  --version               Show current version and exit
 ```
 
 ### drupal-news-viewer
@@ -224,7 +230,11 @@ Options:
 Launch web interface to view reports.
 
 ```bash
-drupal-news-viewer
+drupal-news-viewer [OPTIONS]
+
+Options:
+  --port <n>              Port to run server on (default: 5000)
+  --version               Show current version and exit
 
 Opens http://localhost:5000
 Features: tabs, run history, metrics, logs

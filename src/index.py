@@ -8,6 +8,7 @@ and summarizes Drupal news via selectable LLMs.
 import argparse
 import sys
 import time
+import subprocess
 from pathlib import Path
 from datetime import datetime
 from dotenv import load_dotenv
@@ -135,6 +136,47 @@ def load_env_vars(env_path: str = ".env", config: dict = None) -> dict:
     }
 
 
+def get_current_version() -> str:
+    """
+    Get the current version from git tag.
+
+    Returns:
+        String with the current git tag version, or "unknown" if not available
+    """
+    try:
+        # Try to get the current git tag
+        result = subprocess.run(
+            ["git", "describe", "--tags", "--abbrev=0"],
+            capture_output=True,
+            text=True,
+            cwd=Path(__file__).parent.parent
+        )
+        if result.returncode == 0:
+            version = result.stdout.strip()
+            if version.startswith('v'):
+                return version[1:]  # Remove 'v' prefix if present
+            return version
+        else:
+            # Fallback to checking the latest tag
+            result = subprocess.run(
+                ["git", "tag", "--sort=-version:refname"],
+                capture_output=True,
+                text=True,
+                cwd=Path(__file__).parent.parent
+            )
+            if result.returncode == 0:
+                tags = result.stdout.strip().split('\n')
+                if tags and tags[0]:
+                    version = tags[0]
+                    if version.startswith('v'):
+                        return version[1:]  # Remove 'v' prefix if present
+                    return version
+    except Exception:
+        pass
+
+    return "unknown"
+
+
 def main():
     """Main pipeline execution."""
     # Parse arguments
@@ -151,8 +193,14 @@ def main():
     parser.add_argument("--env", default=".env", help="Environment file path")
     parser.add_argument("--outdir", default=None, help="Output directory override")
     parser.add_argument("--verbose", action="store_true", help="Verbose logging")
+    parser.add_argument("--version", action="store_true", help="Show current version and exit")
 
     args = parser.parse_args()
+
+    # Handle --version flag
+    if args.version:
+        print(f"drupal-news version {get_current_version()}")
+        sys.exit(0)
 
     # Load configuration
     config = load_config(args.config)

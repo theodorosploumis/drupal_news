@@ -1,5 +1,18 @@
 # Page Selectors - Overview
 
+## Version Information
+
+You can check the current version of the Drupal News Aggregator using the `--version` flag with any CLI command:
+
+```bash
+drupal-news --version
+drupal-news-scheduler --version
+drupal-news-email --version
+drupal-news-viewer --version
+```
+
+This will display the current git tag version (e.g., "drupal-news version 0.0.6").
+
 ## Overview
 
 The Drupal News Aggregator allows you to configure custom CSS selectors for scraping web pages. This gives you precise control over which HTML elements to extract data from.

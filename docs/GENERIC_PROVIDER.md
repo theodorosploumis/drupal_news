@@ -1,5 +1,18 @@
 # Generic Provider Guide
 
+## Version Information
+
+You can check the current version of the Drupal News Aggregator using the `--version` flag with any CLI command:
+
+```bash
+drupal-news --version
+drupal-news-scheduler --version
+drupal-news-email --version
+drupal-news-viewer --version
+```
+
+This will display the current git tag version (e.g., "drupal-news version 0.0.6").
+
 ## Overview
 
 The **generic provider** is a universal client that works with **any OpenAI-compatible API endpoint**. Use it when you want to:

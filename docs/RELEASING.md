@@ -235,6 +235,7 @@ pip install dist/drupal_news-*.whl
 # Test commands
 drupal-news --help
 drupal-news --dry-run
+drupal-news --version  # Should show the new version
 ```
 
 ### Test Installation from TestPyPI
@@ -248,6 +249,7 @@ pip install --index-url https://test.pypi.org/simple/ drupal-news
 
 # Test
 drupal-news --help
+drupal-news --version  # Should show the new version
 ```
 
 ## Release Checklist

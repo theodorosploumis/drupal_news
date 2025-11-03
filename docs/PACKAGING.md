@@ -169,24 +169,28 @@ The package provides four command-line tools:
 
 ```bash
 drupal-news --provider openai --days 7
+drupal-news --version  # Show current version
 ```
 
 ### 2. `drupal-news-scheduler` (scheduler)
 
 ```bash
 drupal-news-scheduler --every friday --hour 9 --provider openai
+drupal-news-scheduler --version  # Show current version
 ```
 
 ### 3. `drupal-news-email` (email sender)
 
 ```bash
 drupal-news-email --latest --days 7
+drupal-news-email --version  # Show current version
 ```
 
 ### 4. `drupal-news-viewer` (web viewer)
 
 ```bash
 drupal-news-viewer
+drupal-news-viewer --version  # Show current version
 # Opens http://localhost:5000
 ```
 

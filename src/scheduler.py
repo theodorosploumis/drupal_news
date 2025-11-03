@@ -1,10 +1,9 @@
 """Scheduler for Drupal Aggregator using APScheduler."""
 import argparse
-from apscheduler.schedulers.blocking import BlockingScheduler
-from apscheduler.triggers.cron import CronTrigger
 import subprocess
 import sys
 from pathlib import Path
+import os
 
 
 def run_aggregator(provider: str, model: str = None, email: bool = True, days: int = 7):
@@ -41,6 +40,47 @@ def run_aggregator(provider: str, model: str = None, email: bool = True, days: i
         print(e.stderr)
 
 
+def get_current_version() -> str:
+    """
+    Get the current version from git tag.
+
+    Returns:
+        String with the current git tag version, or "unknown" if not available
+    """
+    try:
+        # Try to get the current git tag
+        result = subprocess.run(
+            ["git", "describe", "--tags", "--abbrev=0"],
+            capture_output=True,
+            text=True,
+            cwd=Path(__file__).parent.parent
+        )
+        if result.returncode == 0:
+            version = result.stdout.strip()
+            if version.startswith('v'):
+                return version[1:]  # Remove 'v' prefix if present
+            return version
+        else:
+            # Fallback to checking the latest tag
+            result = subprocess.run(
+                ["git", "tag", "--sort=-version:refname"],
+                capture_output=True,
+                text=True,
+                cwd=Path(__file__).parent.parent
+            )
+            if result.returncode == 0:
+                tags = result.stdout.strip().split('\n')
+                if tags and tags[0]:
+                    version = tags[0]
+                    if version.startswith('v'):
+                        return version[1:]  # Remove 'v' prefix if present
+                    return version
+    except Exception:
+        pass
+
+    return "unknown"
+
+
 def main():
     """Main scheduler entry point."""
     parser = argparse.ArgumentParser(description="Schedule Drupal Aggregator runs")
@@ -53,8 +93,14 @@ def main():
     parser.add_argument("--model", help="Model override")
     parser.add_argument("--email", choices=["yes", "no"], default="yes", help="Send email")
     parser.add_argument("--days", type=int, default=7, help="Number of days to aggregate")
+    parser.add_argument("--version", action="store_true", help="Show current version and exit")
 
     args = parser.parse_args()
+
+    # Handle --version flag
+    if args.version:
+        print(f"drupal-news-scheduler version {get_current_version()}")
+        sys.exit(0)
 
     # Map day names to cron day_of_week values
     day_map = {
