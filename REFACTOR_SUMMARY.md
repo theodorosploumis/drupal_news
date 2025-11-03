@@ -36,7 +36,7 @@ The Drupal News Aggregator codebase has been successfully refactored to consolid
 - `tests/test_timebox.py`: Updated imports to use consolidated utilities
 
 ## Documentation Updates
-- `CLAUDE.md`: Updated directory layout and pipeline modules sections
+- `AGENTS.md` (formerly `CLAUDE.md`): Updated directory layout and pipeline modules sections
 - `README.md`: Already reflects the new structure
 
 ## Benefits
