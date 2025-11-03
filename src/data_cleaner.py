@@ -119,7 +119,7 @@ def cleanup_cache(cache_db_path: Path, ttl_days: int = 21) -> int:
     Returns:
         Number of entries purged
     """
-    from cache_manager import CacheManager
+    from drupal_news.cache_manager import CacheManager
 
     cache = CacheManager(str(cache_db_path), ttl_days)
     return cache.purge_expired()
