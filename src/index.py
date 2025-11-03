@@ -6,6 +6,7 @@ Automated Drupal News aggregator that collects, normalizes, caches, validates,
 and summarizes Drupal news via selectable LLMs.
 """
 import argparse
+import subprocess
 import sys
 import time
 from pathlib import Path
@@ -135,8 +136,54 @@ def load_env_vars(env_path: str = ".env", config: dict = None) -> dict:
     }
 
 
+def get_current_version() -> str:
+    """
+    Get the current version from git tag.
+
+    Returns:
+        String with the current git tag version, or "unknown" if not available
+    """
+    try:
+        # Try to get the current git tag
+        result = subprocess.run(
+            ["git", "describe", "--tags", "--abbrev=0"],
+            capture_output=True,
+            text=True,
+            cwd=Path(__file__).parent.parent
+        )
+        if result.returncode == 0:
+            version = result.stdout.strip()
+            if version.startswith('v'):
+                return version[1:]  # Remove 'v' prefix if present
+            return version
+        else:
+            # Fallback to checking the latest tag
+            result = subprocess.run(
+                ["git", "tag", "--sort=-version:refname"],
+                capture_output=True,
+                text=True,
+                cwd=Path(__file__).parent.parent
+            )
+            if result.returncode == 0:
+                tags = result.stdout.strip().split('\n')
+                if tags and tags[0]:
+                    version = tags[0]
+                    if version.startswith('v'):
+                        return version[1:]  # Remove 'v' prefix if present
+                    return version
+    except Exception:
+        pass
+
+    return "unknown"
+
+
 def main():
     """Main pipeline execution."""
+    # Check for --version flag first
+    if '--version' in sys.argv:
+        print(f"drupal-news version {get_current_version()}")
+        sys.exit(0)
+
     # Parse arguments
     parser = argparse.ArgumentParser(description="Drupal News Aggregator")
     parser.add_argument("--provider", default=None, help="AI provider (openai, anthropic, etc.)")
