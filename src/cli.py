@@ -25,16 +25,28 @@ def email_main():
 
 def viewer_main():
     """Web viewer CLI entry point for drupal-news-viewer command."""
-    from drupal_news.viewer import app
+    import sys
+    import argparse
+    from drupal_news.viewer import app, get_current_version
+
+    # Check for --version flag first
+    if '--version' in sys.argv:
+        print(f"drupal-news-viewer version {get_current_version()}")
+        sys.exit(0)
+
+    # Parse arguments
+    parser = argparse.ArgumentParser(description="Drupal News Viewer")
+    parser.add_argument("--port", type=int, default=5000, help="Port to run the server on (default: 5000)")
+    args = parser.parse_args()
 
     print("=" * 60)
     print("Drupal News Viewer")
     print("=" * 60)
-    print("Starting server on http://localhost:5000")
+    print(f"Starting server on http://localhost:{args.port}")
     print("Press Ctrl+C to stop")
     print("=" * 60)
 
-    app.run(debug=False, host='0.0.0.0', port=5000)
+    app.run(debug=False, host='0.0.0.0', port=args.port)
 
 
 if __name__ == "__main__":

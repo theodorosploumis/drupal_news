@@ -199,13 +199,16 @@ def get_current_version() -> str:
     Returns:
         String with the current git tag version, or "unknown" if not available
     """
+    import subprocess
+    from pathlib import Path
+
     try:
         # Try to get the current git tag
         result = subprocess.run(
             ["git", "describe", "--tags", "--abbrev=0"],
             capture_output=True,
             text=True,
-            cwd=Path(__file__).parent.parent
+            cwd=Path(__file__).parent
         )
         if result.returncode == 0:
             version = result.stdout.strip()
@@ -218,7 +221,7 @@ def get_current_version() -> str:
                 ["git", "tag", "--sort=-version:refname"],
                 capture_output=True,
                 text=True,
-                cwd=Path(__file__).parent.parent
+                cwd=Path(__file__).parent
             )
             if result.returncode == 0:
                 tags = result.stdout.strip().split('\n')
@@ -237,7 +240,7 @@ def main():
     """Main entry point for drupal-news-email CLI."""
     import argparse
     from pathlib import Path
-    
+
     parser = argparse.ArgumentParser(description='Send Drupal News email reports')
     parser.add_argument('--latest', action='store_true', help='Send latest report')
     parser.add_argument('--days', type=int, default=7, help='Days back to check (default: 7)')
@@ -249,8 +252,9 @@ def main():
     # Handle --version flag
     if args.version:
         print(f"drupal-news-email version {get_current_version()}")
+        import sys
         sys.exit(0)
-
+    
     print("Email sender CLI")
     print("=" * 60)
     

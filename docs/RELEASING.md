@@ -250,6 +250,9 @@ pip install --index-url https://test.pypi.org/simple/ drupal-news
 # Test
 drupal-news --help
 drupal-news --version  # Should show the new version
+drupal-news-scheduler --version  # Should show the new version
+drupal-news-email --version  # Should show the new version
+drupal-news-viewer --version  # Should show the new version
 ```
 
 ## Release Checklist

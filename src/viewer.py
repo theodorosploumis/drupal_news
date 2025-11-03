@@ -8,9 +8,52 @@ import sys
 import subprocess
 import argparse
 import re
+import subprocess
+import argparse
 from pathlib import Path
 from flask import Flask, render_template_string, jsonify, request
 import markdown
+
+
+def get_current_version() -> str:
+    """
+    Get the current version from git tag.
+
+    Returns:
+        String with the current git tag version, or "unknown" if not available
+    """
+    try:
+        # Try to get the current git tag
+        result = subprocess.run(
+            ["git", "describe", "--tags", "--abbrev=0"],
+            capture_output=True,
+            text=True,
+            cwd=Path(__file__).parent.parent
+        )
+        if result.returncode == 0:
+            version = result.stdout.strip()
+            if version.startswith('v'):
+                return version[1:]  # Remove 'v' prefix if present
+            return version
+        else:
+            # Fallback to checking the latest tag
+            result = subprocess.run(
+                ["git", "tag", "--sort=-version:refname"],
+                capture_output=True,
+                text=True,
+                cwd=Path(__file__).parent.parent
+            )
+            if result.returncode == 0:
+                tags = result.stdout.strip().split('\n')
+                if tags and tags[0]:
+                    version = tags[0]
+                    if version.startswith('v'):
+                        return version[1:]  # Remove 'v' prefix if present
+                    return version
+    except Exception:
+        pass
+
+    return "unknown"
 
 
 def get_static_folder():
@@ -20,7 +63,30 @@ def get_static_folder():
     if cwd_static.exists():
         return str(cwd_static)
 
-    # Fall back to package static folder
+    # Try to find static folder relative to the package using importlib.resources
+    try:
+        import importlib.resources as pkg_resources
+        import drupal_news
+        from drupal_news import static  # Import the static module/package
+
+        # Use importlib.resources to get the static directory
+        static_path = pkg_resources.files(drupal_news) / "static"
+        if static_path.is_dir():
+            return str(static_path)
+    except (ImportError, AttributeError):
+        pass
+
+    # Try to find static folder relative to the package (fallback)
+    try:
+        import drupal_news
+        package_root = Path(drupal_news.__file__).parent.parent
+        package_static = package_root / "static"
+        if package_static.exists():
+            return str(package_static)
+    except (ImportError, AttributeError):
+        pass
+
+    # Fall back to package static folder (for development)
     package_static = Path(__file__).parent.parent / "static"
     if package_static.exists():
         return str(package_static)
@@ -293,17 +359,15 @@ def get_current_version() -> str:
 
 
 if __name__ == '__main__':
-    # Parse arguments for --version option
-    parser = argparse.ArgumentParser(description="Drupal News Web Viewer")
-    parser.add_argument('--version', action='store_true', help='Show current version and exit')
-    parser.add_argument('--port', type=int, default=5000, help='Port to run the server on (default: 5000)')
-
-    args = parser.parse_args()
-
-    # Handle --version flag
-    if args.version:
+    # Check for --version flag first
+    if '--version' in sys.argv:
         print(f"drupal-news-viewer version {get_current_version()}")
         sys.exit(0)
+
+    # Parse arguments
+    parser = argparse.ArgumentParser(description="Drupal News Viewer")
+    parser.add_argument("--port", type=int, default=5000, help="Port to run the server on (default: 5000)")
+    args = parser.parse_args()
 
     print("=" * 60)
     print("Drupal News Viewer")

@@ -83,6 +83,11 @@ def get_current_version() -> str:
 
 def main():
     """Main scheduler entry point."""
+    # Check for --version flag first
+    if '--version' in sys.argv:
+        print(f"drupal-news-scheduler version {get_current_version()}")
+        sys.exit(0)
+
     parser = argparse.ArgumentParser(description="Schedule Drupal Aggregator runs")
 
     parser.add_argument("--every", choices=["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"],

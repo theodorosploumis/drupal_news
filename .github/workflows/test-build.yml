@@ -43,7 +43,8 @@ jobs:
         drupal-news --help
         drupal-news-scheduler --help
         drupal-news-email --help
-        drupal-news-viewer --help || true
+        # Test viewer help without starting server (use --version instead)
+        drupal-news-viewer --version
 
     - name: Test imports
       run: |

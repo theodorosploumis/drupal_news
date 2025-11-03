@@ -6,6 +6,7 @@ Automated Drupal News aggregator that collects, normalizes, caches, validates,
 and summarizes Drupal news via selectable LLMs.
 """
 import argparse
+import subprocess
 import sys
 import time
 import subprocess
@@ -179,6 +180,11 @@ def get_current_version() -> str:
 
 def main():
     """Main pipeline execution."""
+    # Check for --version flag first
+    if '--version' in sys.argv:
+        print(f"drupal-news version {get_current_version()}")
+        sys.exit(0)
+
     # Parse arguments
     parser = argparse.ArgumentParser(description="Drupal News Aggregator")
     parser.add_argument("--provider", default=None, help="AI provider (openai, anthropic, etc.)")
