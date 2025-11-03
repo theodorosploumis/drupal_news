@@ -108,7 +108,7 @@ include-package-data = true
 version = {file = "VERSION"}
 
 [tool.setuptools.package-data]
-drupal_news = ["*.yaml", "*.json"]
+drupal_news = ["*.yaml", "*.json", "static/**/*"]
 
 [tool.black]
 line-length = 100

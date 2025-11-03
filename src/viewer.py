@@ -61,7 +61,30 @@ def get_static_folder():
     if cwd_static.exists():
         return str(cwd_static)
 
-    # Fall back to package static folder
+    # Try to find static folder relative to the package using importlib.resources
+    try:
+        import importlib.resources as pkg_resources
+        import drupal_news
+        from drupal_news import static  # Import the static module/package
+
+        # Use importlib.resources to get the static directory
+        static_path = pkg_resources.files(drupal_news) / "static"
+        if static_path.is_dir():
+            return str(static_path)
+    except (ImportError, AttributeError):
+        pass
+
+    # Try to find static folder relative to the package (fallback)
+    try:
+        import drupal_news
+        package_root = Path(drupal_news.__file__).parent.parent
+        package_static = package_root / "static"
+        if package_static.exists():
+            return str(package_static)
+    except (ImportError, AttributeError):
+        pass
+
+    # Fall back to package static folder (for development)
     package_static = Path(__file__).parent.parent / "static"
     if package_static.exists():
         return str(package_static)
