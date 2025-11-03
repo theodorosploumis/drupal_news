@@ -1,7 +1,7 @@
 """Tests for timebox utilities."""
 import pytest
 from datetime import datetime
-from drupal_news.utils.timebox import get_timezone, now_in_tz, days_ago, parse_date
+from drupal_news.utils.consolidated_utils import get_timezone, now_in_tz, days_ago, parse_date
 
 
 def test_get_timezone():

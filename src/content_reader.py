@@ -1,10 +1,14 @@
-"""Webpage reader and scraper for Drupal Aggregator."""
+"""Unified content reader for Drupal Aggregator.
+
+This module combines RSS feed reading and web page scraping into a single interface.
+"""
+
+import feedparser
 import httpx
 from bs4 import BeautifulSoup
 from typing import List, Dict, Any, Optional, Union
 from datetime import datetime
-from drupal_news.utils.timebox import parse_date, is_within_timeframe
-from drupal_news.utils.html_norm import strip_html_tags, clean_text, truncate_text, extract_links
+from drupal_news.utils.consolidated_utils import parse_date, is_within_timeframe, strip_html_tags, clean_text, truncate_text, extract_links
 from drupal_news.cache_manager import CacheManager
 
 
@@ -31,7 +35,136 @@ def normalize_page_config(page_source: Union[str, Dict[str, Any]]) -> Dict[str, 
         raise ValueError(f"Invalid page source format: {type(page_source)}")
 
 
-def fetch_pages(
+def fetch_content(
+    rss_urls: List[str],
+    page_sources: List[Union[str, Dict[str, Any]]],
+    since: datetime,
+    timezone: str,
+    cache: Optional[CacheManager] = None,
+    timeout: int = 20,
+    retries: int = 2,
+    user_agent: str = "DrupalNewsBot/1.0"
+) -> List[Dict[str, Any]]:
+    """
+    Fetch content from both RSS feeds and web pages.
+
+    Args:
+        rss_urls: List of RSS feed URLs
+        page_sources: List of page URLs or config objects to scrape
+        since: Datetime threshold for filtering items
+        timezone: Timezone name
+        cache: Optional cache manager
+        timeout: HTTP timeout in seconds
+        retries: Number of retry attempts
+        user_agent: User agent string
+
+    Returns:
+        List of normalized items from both RSS and web pages
+    """
+    items = []
+
+    # Fetch RSS feeds
+    rss_items = fetch_rss_feeds(rss_urls, since, timezone, cache, timeout, retries, user_agent)
+    items.extend(rss_items)
+
+    # Fetch web pages
+    page_items = fetch_web_pages(page_sources, since, timezone, cache, timeout, retries, user_agent)
+    items.extend(page_items)
+
+    return items
+
+
+def fetch_rss_feeds(
+    rss_urls: List[str],
+    since: datetime,
+    timezone: str,
+    cache: Optional[CacheManager] = None,
+    timeout: int = 20,
+    retries: int = 2,
+    user_agent: str = "DrupalNewsBot/1.0"
+) -> List[Dict[str, Any]]:
+    """
+    Fetch and normalize RSS feeds.
+
+    Args:
+        rss_urls: List of RSS feed URLs
+        since: Datetime threshold for filtering items
+        timezone: Timezone name
+        cache: Optional cache manager
+        timeout: HTTP timeout in seconds
+        retries: Number of retry attempts
+        user_agent: User agent string
+
+    Returns:
+        List of normalized items
+    """
+    items = []
+
+    for url in rss_urls:
+        try:
+            # Check cache first
+            if cache:
+                cached = cache.get(url)
+                if cached:
+                    items.extend(cached.get("items", []))
+                    continue
+
+            # Fetch RSS feed
+            headers = {"User-Agent": user_agent}
+            response = httpx.get(url, headers=headers, timeout=timeout, follow_redirects=True)
+            response.raise_for_status()
+
+            # Parse feed
+            feed = feedparser.parse(response.content)
+
+            feed_items = []
+            for entry in feed.entries:
+                # Extract data
+                title = entry.get("title", "").strip()
+                link = entry.get("link", "").strip()
+                description = entry.get("description") or entry.get("summary", "")
+                pub_date = entry.get("published") or entry.get("updated", "")
+
+                if not title or not link:
+                    continue
+
+                # Parse and check date
+                date_obj = parse_date(pub_date, timezone)
+                if date_obj and not is_within_timeframe(date_obj, since, timezone):
+                    continue
+
+                # Clean description
+                description = strip_html_tags(description)
+                description = clean_text(description)
+                description = truncate_text(description, 500)
+
+                item = {
+                    "title": title,
+                    "url": link,
+                    "description": description,
+                    "date": date_obj.isoformat() if date_obj else pub_date,
+                    "source_type": "rss",
+                    "source_url": url,
+                    "tags": [tag.get("term", "") for tag in entry.get("tags", [])]
+                }
+
+                feed_items.append(item)
+
+            # Cache the results
+            if cache and feed_items:
+                cache.set(url, {"items": feed_items})
+
+            items.extend(feed_items)
+
+        except httpx.HTTPError as e:
+            print(f"HTTP error fetching RSS {url}: {e}")
+        except Exception as e:
+            print(f"Error processing RSS {url}: {e}")
+
+    return items
+
+
+def fetch_web_pages(
     page_sources: List[Union[str, Dict[str, Any]]],
     since: datetime,
     timezone: str,
@@ -80,15 +213,15 @@ def fetch_pages(
             # Parse based on selectors or URL pattern
             if selectors:
                 # Use custom selectors
-                page_items = parse_with_selectors(response.text, url, since, timezone, selectors, base_url)
+                page_items = _parse_with_selectors(response.text, url, since, timezone, selectors, base_url)
             elif "drupal.org/news" in url:
-                page_items = parse_drupal_news(response.text, url, since, timezone)
+                page_items = _parse_drupal_news(response.text, url, since, timezone)
             elif "drupal.org/planet" in url:
-                page_items = parse_drupal_planet(response.text, url, since, timezone)
+                page_items = _parse_drupal_planet(response.text, url, since, timezone)
             elif "drupal.org/project/drupal/releases" in url:
-                page_items = parse_drupal_releases(response.text, url, since, timezone)
+                page_items = _parse_drupal_releases(response.text, url, since, timezone)
             else:
-                page_items = parse_generic_page(response.text, url, since, timezone)
+                page_items = _parse_generic_page(response.text, url, since, timezone)
 
             # Cache the results
             if cache and page_items:
@@ -104,7 +237,7 @@ def fetch_pages(
     return items
 
 
-def parse_with_selectors(
+def _parse_with_selectors(
     html: str,
     source_url: str,
     since: datetime,
@@ -217,7 +350,7 @@ def parse_with_selectors(
     return items
 
 
-def parse_drupal_news(html: str, source_url: str, since: datetime, timezone: str) -> List[Dict[str, Any]]:
+def _parse_drupal_news(html: str, source_url: str, since: datetime, timezone: str) -> List[Dict[str, Any]]:
     """Parse drupal.org/news page."""
     soup = BeautifulSoup(html, "lxml")
     items = []
@@ -269,7 +402,7 @@ def parse_drupal_news(html: str, source_url: str, since: datetime, timezone: str
     return items
 
 
-def parse_drupal_planet(html: str, source_url: str, since: datetime, timezone: str) -> List[Dict[str, Any]]:
+def _parse_drupal_planet(html: str, source_url: str, since: datetime, timezone: str) -> List[Dict[str, Any]]:
     """Parse drupal.org/planet page."""
     soup = BeautifulSoup(html, "lxml")
     items = []
@@ -320,7 +453,7 @@ def parse_drupal_planet(html: str, source_url: str, since: datetime, timezone: s
     return items
 
 
-def parse_drupal_releases(html: str, source_url: str, since: datetime, timezone: str) -> List[Dict[str, Any]]:
+def _parse_drupal_releases(html: str, source_url: str, since: datetime, timezone: str) -> List[Dict[str, Any]]:
     """Parse drupal.org/project/drupal/releases page."""
     soup = BeautifulSoup(html, "lxml")
     items = []
@@ -369,7 +502,7 @@ def parse_drupal_releases(html: str, source_url: str, since: datetime, timezone:
     return items
 
 
-def parse_generic_page(html: str, source_url: str, since: datetime, timezone: str) -> List[Dict[str, Any]]:
+def _parse_generic_page(html: str, source_url: str, since: datetime, timezone: str) -> List[Dict[str, Any]]:
     """Generic page parser."""
     soup = BeautifulSoup(html, "lxml")
     items = []
@@ -403,3 +536,14 @@ def parse_generic_page(html: str, source_url: str, since: datetime, timezone: st
         })
 
     return items
+
+
+# Convenience functions for backward compatibility
+def fetch_rss(*args, **kwargs):
+    """Backward compatibility function - deprecated, use fetch_rss_feeds instead."""
+    return fetch_rss_feeds(*args, **kwargs)
+
+
+def fetch_pages(*args, **kwargs):
+    """Backward compatibility function - deprecated, use fetch_web_pages instead."""
+    return fetch_web_pages(*args, **kwargs)
