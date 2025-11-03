@@ -11,8 +11,8 @@ include config.example.json
 include .env.example
 
 # Include static files for viewer
-recursive-include static *.css *.scss *.js
-include static/scss/README.md
+recursive-include src/static *.css *.scss *.js
+include src/static/scss/README.md
 
 # Include templates if any
 recursive-include templates *.html
