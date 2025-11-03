@@ -101,6 +101,15 @@ class PackageBuilder:
         """Build the package."""
         print("\n🔨 Building package...")
 
+        # Compile SCSS to CSS before building
+        print("\n🎨 Compiling SCSS to CSS...")
+        if not self.run_command(
+            [sys.executable, "src/compile_scss.py"],
+            "Compiling SCSS files"
+        ):
+            print("⚠️  SCSS compilation failed, continuing with build...")
+            # Don't fail the build if SCSS compilation fails
+
         # Ensure build tools are installed
         print("\n📦 Checking build dependencies...")
         if not self.run_command(
