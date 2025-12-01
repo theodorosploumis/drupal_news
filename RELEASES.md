@@ -4,6 +4,11 @@ All notable changes to Drupal News Aggregator will be documented here.
 
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.0.9] - 2025-12-01
+
+Add support for z.ai GLM-4.6 and MiniMax MiniMax-M2 providers
+
+
 ## [0.0.8] - 2025-11-03
 
 Viewer improvements and styling
