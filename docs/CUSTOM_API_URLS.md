@@ -87,6 +87,50 @@ PORTKEY_API_KEY=pk-***
 PORTKEY_GROK_KEY=vk-***
 ```
 
+## Anthropic-Compatible Providers
+
+### z.ai (GLM-4.6)
+
+```yaml
+zai:
+  client: anthropic_client
+  model: glm-4.6
+  temperature: 0.2
+  api_url: https://api.z.ai/api/anthropic
+```
+
+Required environment variable:
+```bash
+ZAI_API_KEY=your_zai_api_key
+```
+
+**Usage:**
+```bash
+drupal-news --provider zai
+```
+
+### MiniMax (MiniMax-M2)
+
+```yaml
+minimax:
+  client: anthropic_client
+  model: minimax-m2
+  temperature: 0.2
+  api_url: https://api.minimax.io/anthropic
+```
+
+Required environment variable:
+```bash
+MINIMAX_API_KEY=your_minimax_api_key
+```
+
+**Usage:**
+```bash
+drupal-news --provider minimax
+```
+
+Both providers use the Anthropic API format and are configured in `config.yml` by default.
+
 ## Supported Providers
 
 Custom URLs and headers work with:
@@ -95,6 +139,8 @@ Custom URLs and headers work with:
 - ✅ **anthropic** - Via proxy
 - ✅ **ollama** - Custom host/port
 - ✅ **openrouter** - Via Portkey
+- ✅ **zai** - GLM-4.6 via Anthropic-compatible endpoint
+- ✅ **minimax** - MiniMax-M2 via Anthropic-compatible endpoint
 - ⚠️ **gemini** - Limited (uses official SDK)
 
 ## Testing

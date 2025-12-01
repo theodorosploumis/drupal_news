@@ -75,6 +75,10 @@ def generate_summary(
         return _generate_xai_summary(prompt, model, temperature, api_url, headers, **kwargs)
     elif provider == "deepseek":
         return _generate_deepseek_summary(prompt, model, temperature, api_url, headers, **kwargs)
+    elif provider == "zai":
+        return _generate_anthropic_summary(prompt, model, temperature, api_url, headers, **kwargs, api_key_env="ZAI_API_KEY", provider_name="zai")
+    elif provider == "minimax":
+        return _generate_anthropic_summary(prompt, model, temperature, api_url, headers, **kwargs, api_key_env="MINIMAX_API_KEY", provider_name="minimax")
     else:
         # Default to generic OpenAI-compatible client
         return _generate_generic_summary(prompt, model, temperature, api_url, headers, **kwargs)
@@ -136,9 +140,14 @@ def _generate_anthropic_summary(prompt: str, model: str, temperature: float, api
     except ImportError:
         raise ImportError("Anthropic package not installed. Install with: pip install anthropic>=0.34")
 
-    api_key = os.getenv("ANTHROPIC_API_KEY")
+    # Get API key from environment (supports custom providers)
+    api_key_env = kwargs.get("api_key_env", "ANTHROPIC_API_KEY")
+    api_key = os.getenv(api_key_env)
     if not api_key:
-        raise ValueError("ANTHROPIC_API_KEY not set in environment")
+        raise ValueError(f"{api_key_env} not set in environment")
+
+    # Get provider name for return value
+    provider_name = kwargs.get("provider_name", "anthropic")
 
     # Build client with optional custom URL and headers
     client_kwargs = {"api_key": api_key}
@@ -172,7 +181,7 @@ def _generate_anthropic_summary(prompt: str, model: str, temperature: float, api
             "input_tokens": input_tokens or None,
             "output_tokens": output_tokens or None,
             "model": model,
-            "provider": "anthropic"
+            "provider": provider_name
         }
     except Exception as e:
         raise RuntimeError(f"Anthropic API error: {str(e)}")

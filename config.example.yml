@@ -155,6 +155,20 @@ ai:
       temperature: 0.2
       # api_url: https://api.deepseek.com
 
+    # z.ai GLM-4.6 (Anthropic-compatible endpoint)
+    zai:
+      client: anthropic_client
+      model: glm-4.6
+      temperature: 0.2
+      api_url: https://api.z.ai/api/anthropic
+
+    # MiniMax MiniMax-M2 (Anthropic-compatible endpoint)
+    minimax:
+      client: anthropic_client
+      model: minimax-m2
+      temperature: 0.2
+      api_url: https://api.minimax.io/anthropic
+
     # ====================
     # LOCAL PROVIDERS
     # ====================
@@ -374,6 +388,10 @@ api_keys:
   TOGETHER_API_KEY: ${TOGETHER_API_KEY}            # ...
   FIREWORKS_API_KEY: ${FIREWORKS_API_KEY}          # ...
 
+  # New Anthropic-compatible providers
+  ZAI_API_KEY: ${ZAI_API_KEY}                      # For z.ai GLM-4.6
+  MINIMAX_API_KEY: ${MINIMAX_API_KEY}              # For MiniMax MiniMax-M2
+
   # Optional keys
   OLLAMA_API_KEY: ${OLLAMA_API_KEY}                # For remote Ollama servers
   GITHUB_API_KEY: ${GITHUB_API_KEY}                # For GitHub features (ghp_...)
@@ -419,7 +437,13 @@ api_keys:
 # 9. Use generic_client for maximum flexibility:
 #    Works with ANY OpenAI-compatible endpoint
 #
-# 10. See docs/ for detailed guides:
+# 10. Try the new Anthropic-compatible providers:
+#     export ZAI_API_KEY="your_zai_key"
+#     export MINIMAX_API_KEY="your_minimax_key"
+#     drupal-news --provider zai
+#     drupal-news --provider minimax
+#
+# 11. See docs/ for detailed guides:
 #     - docs/CUSTOM_API_URLS.md
 #     - docs/GENERIC_PROVIDER.md
 #     - docs/PAGE_SELECTORS.md
