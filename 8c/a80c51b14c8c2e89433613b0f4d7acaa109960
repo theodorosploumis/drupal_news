@@ -1,0 +1,11 @@
+RELEASES.md
+  ai_agent 7-18
+VERSION
+  ai_agent 1
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.11",
+  "base_commit_sha": "8ca80c51b14c8c2e89433613b0f4d7acaa109960",
+  "prompts": {}
+}
