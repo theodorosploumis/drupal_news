@@ -1,0 +1,30 @@
+src/utils/providers/unified_client.py
+  s_c65d5990792ddf::t_1fc6db9c6c997b 365
+  s_c65d5990792ddf::t_90637d71fe8d6b 232,234-239,246,249,252-254,258-278,280-281,285-287,294-334
+  s_c65d5990792ddf::t_c8c4c044df8f65 426-428
+  s_c65d5990792ddf::t_315592fed09eee 15,20-41
+  s_c65d5990792ddf::t_5b7a7259fd0026 485-498,503,538,549-562,567,638-640
+  s_c65d5990792ddf::t_f80cd40f9edb82 197-202,205-211
+  s_c65d5990792ddf::t_827031f1586c4f 134-151
+AGENTS.md
+  s_c65d5990792ddf::t_c4e2060ff0cb0a 225
+  s_c65d5990792ddf::t_9b45ef3c5d2427 221
+pyproject.toml
+  s_c65d5990792ddf::t_3ac450065b0e69 63-68,72-75
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.11",
+  "base_commit_sha": "d94cbe9152267fa55c756f2ca94d1a249ffa2564",
+  "prompts": {},
+  "sessions": {
+    "s_c65d5990792ddf": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "00aac5ed-5ef5-4842-8b74-b170a62e5848",
+        "model": "glm-5.1"
+      },
+      "human_author": "Theodoros Ploumis <me@theodorosploumis.com>"
+    }
+  }
+}
