@@ -4,6 +4,18 @@ All notable changes to Drupal News Aggregator will be documented here.
 
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.1.0] - 2026-05-22
+
+Update AI SDKs and add reasoning model support
+
+- Update SDK pins: openai>=1.82, anthropic>=0.52, google-genai>=1.0, dashscope>=1.20
+- Add reasoning model detection (grok-4-fast-reasoning, o1/o3/o4-mini, deepseek-r1)
+- Fix DeepSeek base URL (was missing /v1 prefix)
+- Migrate Gemini to new google-genai SDK with actual token counting
+- Add max_tokens to Qwen/DashScope path
+- Update default models: claude-sonnet-4-6-20250514, gemini-2.5-flash
+
+
 ## [0.0.9] - 2025-12-01
 
 Add support for z.ai GLM-4.6 and MiniMax MiniMax-M2 providers
