@@ -4,7 +4,7 @@ All notable changes to Drupal News Aggregator will be documented here.
 
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
-## [0.1.0] - 2026-05-22
+## [0.1.1] - 2026-05-22
 
 Update AI SDKs and add reasoning model support
 
