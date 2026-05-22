@@ -12,9 +12,33 @@ This client can handle all major AI providers through a unified interface:
 """
 
 import os
+import re
 import httpx
 from typing import Dict, Any, Optional
 import importlib
+
+# Models that are "reasoning" models and do NOT accept temperature parameter.
+# Sending temperature to these models causes API errors.
+REASONING_MODEL_PATTERNS = [
+    r"grok-4-fast-reasoning",
+    r"grok-4-reasoning",
+    r"grok-3-mini",
+    r"o[1-9]",
+    r"o3",
+    r"o4-mini",
+    r"deepseek-r1",
+    r"deepseek-reasoner",
+    r"gemini-2\.5-(flash|pro).*thinking",
+]
+
+
+def _is_reasoning_model(model: str) -> bool:
+    """Check if a model is a reasoning model that doesn't accept temperature."""
+    model_lower = model.lower()
+    for pattern in REASONING_MODEL_PATTERNS:
+        if re.search(pattern, model_lower):
+            return True
+    return False
 
 def generate_summary(
     prompt: str,
@@ -107,15 +131,24 @@ def _generate_openai_summary(prompt: str, model: str, temperature: float, api_ur
     client = openai.OpenAI(**client_kwargs)
 
     try:
-        response = client.chat.completions.create(
-            model=model,
-            messages=[
-                {"role": "system", "content": "You are a technical writer specializing in Drupal documentation."},
-                {"role": "user", "content": prompt}
-            ],
-            temperature=temperature,
-            max_tokens=kwargs.get("max_tokens", 4000)
-        )
+        # Build messages
+        messages = [
+            {"role": "system", "content": "You are a technical writer specializing in Drupal documentation."},
+            {"role": "user", "content": prompt}
+        ]
+
+        # Build completion params
+        completion_params = {
+            "model": model,
+            "messages": messages,
+            "max_tokens": kwargs.get("max_tokens", 4000),
+        }
+
+        # Reasoning models don't accept temperature
+        if not _is_reasoning_model(model):
+            completion_params["temperature"] = temperature
+
+        response = client.chat.completions.create(**completion_params)
 
         prompt_tokens = getattr(response.usage, "prompt_tokens", 0)
         completion_tokens = getattr(response.usage, "completion_tokens", 0)
@@ -161,15 +194,21 @@ def _generate_anthropic_summary(prompt: str, model: str, temperature: float, api
     client = anthropic.Anthropic(**client_kwargs)
 
     try:
-        response = client.messages.create(
-            model=model,
-            max_tokens=kwargs.get("max_tokens", 4000),
-            temperature=temperature,
-            system="You are a technical writer specializing in Drupal documentation.",
-            messages=[
+        # Build message params
+        msg_params = {
+            "model": model,
+            "max_tokens": kwargs.get("max_tokens", 4000),
+            "system": "You are a technical writer specializing in Drupal documentation.",
+            "messages": [
                 {"role": "user", "content": prompt}
             ]
-        )
+        }
+
+        # Reasoning models don't accept temperature
+        if not _is_reasoning_model(model):
+            msg_params["temperature"] = temperature
+
+        response = client.messages.create(**msg_params)
 
         input_tokens = getattr(response.usage, "input_tokens", 0)
         output_tokens = getattr(response.usage, "output_tokens", 0)
@@ -190,48 +229,109 @@ def _generate_gemini_summary(prompt: str, model: str, temperature: float, api_ur
                            headers: Dict[str, str] = None, **kwargs) -> Dict[str, Any]:
     """Generate summary using Google Gemini API."""
     try:
-        import google.generativeai as genai
+        from google import genai
     except ImportError:
-        raise ImportError("Google Generative AI package not installed. Install with: pip install google-generativeai>=0.7")
+        try:
+            import google.generativeai as genai
+            # Legacy SDK path
+            return _generate_gemini_summary_legacy(genai, prompt, model, temperature, api_url, headers, **kwargs)
+        except ImportError:
+            raise ImportError("Google GenAI package not installed. Install with: pip install google-genai>=1.0")
 
     api_key = os.getenv("GOOGLE_API_KEY")
     if not api_key:
         raise ValueError("GOOGLE_API_KEY not set in environment")
 
-    # Note: Google Generative AI SDK doesn't directly support custom base URLs
     if api_url:
-        print(f"Warning: Gemini SDK has limited support for custom API URLs")
+        print("Warning: Gemini SDK has limited support for custom API URLs")
 
     if headers:
-        print(f"Warning: Gemini SDK has limited support for custom headers")
-
-    genai.configure(api_key=api_key)
+        print("Warning: Gemini SDK has limited support for custom headers")
 
     try:
-        model_obj = genai.GenerativeModel(
-            model_name=model,
-            generation_config={
-                "temperature": temperature,
-                "max_output_tokens": kwargs.get("max_tokens", 4000),
-            }
-        )
+        client = genai.Client(api_key=api_key)
+
+        from google.genai import types
 
         system_prompt = "You are a technical writer specializing in Drupal documentation."
-        full_prompt = f"{system_prompt}\n\n{prompt}"
 
-        response = model_obj.generate_content(full_prompt)
+        # Reasoning models don't accept temperature
+        config_params = {
+            "max_output_tokens": kwargs.get("max_tokens", 4000),
+        }
+        if not _is_reasoning_model(model):
+            config_params["temperature"] = temperature
 
-        # Estimate tokens (Gemini doesn't always provide exact counts)
-        tokens = kwargs.get("estimated_tokens", len(prompt.split()) * 1.3)
+        response = client.models.generate_content(
+            model=model,
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                system_instruction=system_prompt,
+                **config_params
+            )
+        )
+
+        # Get actual token counts
+        usage = getattr(response, "usage_metadata", None)
+        prompt_tokens = getattr(usage, "prompt_token_count", 0) if usage else 0
+        completion_tokens = getattr(usage, "candidates_token_count", 0) if usage else 0
+        total_tokens = prompt_tokens + completion_tokens
+
+        if total_tokens == 0:
+            total_tokens = int(len(prompt.split()) * 1.3)
 
         return {
             "text": response.text,
-            "tokens": int(tokens),
+            "tokens": total_tokens,
+            "input_tokens": prompt_tokens or None,
+            "output_tokens": completion_tokens or None,
             "model": model,
             "provider": "gemini"
         }
     except Exception as e:
         raise RuntimeError(f"Gemini API error: {str(e)}")
+
+
+def _generate_gemini_summary_legacy(genai, prompt: str, model: str, temperature: float,
+                                     api_url: str = None, headers: Dict[str, str] = None,
+                                     **kwargs) -> Dict[str, Any]:
+    """Fallback for legacy google-generativeai SDK."""
+    api_key = os.getenv("GOOGLE_API_KEY")
+    if not api_key:
+        raise ValueError("GOOGLE_API_KEY not set in environment")
+
+    genai.configure(api_key=api_key)
+
+    model_obj = genai.GenerativeModel(
+        model_name=model,
+        generation_config={
+            "temperature": temperature,
+            "max_output_tokens": kwargs.get("max_tokens", 4000),
+        }
+    )
+
+    system_prompt = "You are a technical writer specializing in Drupal documentation."
+    full_prompt = f"{system_prompt}\n\n{prompt}"
+
+    response = model_obj.generate_content(full_prompt)
+
+    # Try to get actual usage
+    usage = getattr(response, "usage_metadata", None)
+    prompt_tokens = getattr(usage, "prompt_token_count", 0) if usage else 0
+    completion_tokens = getattr(usage, "candidates_token_count", 0) if usage else 0
+    total_tokens = prompt_tokens + completion_tokens
+
+    if total_tokens == 0:
+        total_tokens = int(len(prompt.split()) * 1.3)
+
+    return {
+        "text": response.text,
+        "tokens": total_tokens,
+        "input_tokens": prompt_tokens or None,
+        "output_tokens": completion_tokens or None,
+        "model": model,
+        "provider": "gemini"
+    }
 
 def _generate_qwen_summary(prompt: str, model: str, temperature: float, api_url: str = None,
                          headers: Dict[str, str] = None, **kwargs) -> Dict[str, Any]:
@@ -262,6 +362,7 @@ def _generate_qwen_summary(prompt: str, model: str, temperature: float, api_url:
                 {"role": "user", "content": prompt}
             ],
             temperature=temperature,
+            max_tokens=kwargs.get("max_tokens", 4000),
             result_format='message'
         )
 
@@ -319,9 +420,12 @@ def _generate_http_summary(prompt: str, model: str, provider: str, temperature: 
                 "content": prompt
             }
         ],
-        "temperature": temperature,
         "max_tokens": kwargs.get("max_tokens", 4000)
     }
+
+    # Reasoning models don't accept temperature
+    if not _is_reasoning_model(model):
+        payload["temperature"] = temperature
 
     try:
         with httpx.Client(timeout=300.0) as client:
@@ -378,19 +482,25 @@ def _generate_xai_summary(prompt: str, model: str, temperature: float, api_url: 
     if headers:
         request_headers.update(headers)
 
+    # Build payload
+    payload = {
+        "model": model,
+        "messages": [
+            {"role": "system", "content": "You are a technical writer specializing in Drupal documentation."},
+            {"role": "user", "content": prompt}
+        ],
+        "max_tokens": kwargs.get("max_tokens", 4000)
+    }
+
+    # Reasoning models don't accept temperature
+    if not _is_reasoning_model(model):
+        payload["temperature"] = temperature
+
     try:
         response = httpx.post(
             f"{base_url}/chat/completions",
             headers=request_headers,
-            json={
-                "model": model,
-                "messages": [
-                    {"role": "system", "content": "You are a technical writer specializing in Drupal documentation."},
-                    {"role": "user", "content": prompt}
-                ],
-                "temperature": temperature,
-                "max_tokens": kwargs.get("max_tokens", 4000)
-            },
+            json=payload,
             timeout=120.0
         )
         response.raise_for_status()
@@ -425,7 +535,7 @@ def _generate_deepseek_summary(prompt: str, model: str, temperature: float, api_
     if not api_key:
         raise ValueError("DEEPSEEK_API_KEY not set in environment")
 
-    base_url = api_url if api_url else "https://api.deepseek.com"
+    base_url = api_url if api_url else "https://api.deepseek.com/v1"
 
     # Build headers
     request_headers = {
@@ -436,19 +546,25 @@ def _generate_deepseek_summary(prompt: str, model: str, temperature: float, api_
     if headers:
         request_headers.update(headers)
 
+    # Build payload
+    payload = {
+        "model": model,
+        "messages": [
+            {"role": "system", "content": "You are a technical writer specializing in Drupal documentation."},
+            {"role": "user", "content": prompt}
+        ],
+        "max_tokens": kwargs.get("max_tokens", 4000)
+    }
+
+    # Reasoning models don't accept temperature
+    if not _is_reasoning_model(model):
+        payload["temperature"] = temperature
+
     try:
         response = httpx.post(
             f"{base_url}/chat/completions",
             headers=request_headers,
-            json={
-                "model": model,
-                "messages": [
-                    {"role": "system", "content": "You are a technical writer specializing in Drupal documentation."},
-                    {"role": "user", "content": prompt}
-                ],
-                "temperature": temperature,
-                "max_tokens": kwargs.get("max_tokens", 4000)
-            },
+            json=payload,
             timeout=120.0
         )
         response.raise_for_status()
@@ -516,9 +632,12 @@ def _generate_generic_summary(prompt: str, model: str, temperature: float, api_u
                 "content": prompt
             }
         ],
-        "temperature": temperature,
         "max_tokens": kwargs.get("max_tokens", 4000)
     }
+
+    # Reasoning models don't accept temperature
+    if not _is_reasoning_model(model):
+        payload["temperature"] = temperature
 
     try:
         with httpx.Client(timeout=300.0) as client:

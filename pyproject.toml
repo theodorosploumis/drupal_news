@@ -60,19 +60,19 @@ dependencies = [
 
 [project.optional-dependencies]
 # AI provider SDKs - install as needed
-openai = ["openai>=1.45"]
-anthropic = ["anthropic>=0.34"]
-google = ["google-generativeai>=0.7"]
-qwen = ["dashscope>=1.17"]
-grok = ["xai-sdk>=0.3"]
-deepseek = ["deepseek>=0.2"]
+openai = ["openai>=1.82"]
+anthropic = ["anthropic>=0.52"]
+google = ["google-genai>=1.0"]
+qwen = ["dashscope>=1.20"]
+grok = ["openai>=1.82"]
+deepseek = ["openai>=1.82"]
 
 # Install all AI providers
 all-providers = [
-    "openai>=1.45",
-    "anthropic>=0.34",
-    "google-generativeai>=0.7",
-    "dashscope>=1.17",
+    "openai>=1.82",
+    "anthropic>=0.52",
+    "google-genai>=1.0",
+    "dashscope>=1.20",
 ]
 
 # Development dependencies

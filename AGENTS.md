@@ -218,11 +218,11 @@ ai:
       temperature: 0.2
     anthropic:
       client: anthropic_client
-      model: claude-haiku-4-5-20251001
+      model: claude-sonnet-4-6-20250514
       temperature: 0.2
     gemini:
       client: gemini_client
-      model: gemini-1.5-pro
+      model: gemini-2.5-flash
       temperature: 0.2
     ollama:
       client: ollama_client
