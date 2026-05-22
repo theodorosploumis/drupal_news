@@ -1,0 +1,21 @@
+VERSION
+  s_c65d5990792ddf::t_cf7af4c4fb9843 1
+RELEASES.md
+  s_c65d5990792ddf::t_314c07a85b8359 7
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.11",
+  "base_commit_sha": "889fef299c99aa176913928688f328b39759c6e5",
+  "prompts": {},
+  "sessions": {
+    "s_c65d5990792ddf": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "00aac5ed-5ef5-4842-8b74-b170a62e5848",
+        "model": "glm-5.1"
+      },
+      "human_author": "Theodoros Ploumis <me@theodorosploumis.com>"
+    }
+  }
+}
