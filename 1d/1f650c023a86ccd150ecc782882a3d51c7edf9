@@ -1,0 +1,26 @@
+pyproject.toml
+  s_05b8c93581d21d::t_d52e9cc69707ee 11
+  s_05b8c93581d21d::t_043cbeeb6d2fb7 97-98,105-106
+MANIFEST.in
+  s_05b8c93581d21d::t_d229326d807c09 3,10,14
+src/index.py
+  s_05b8c93581d21d::t_6ffc2def8fd59c 492-500
+requirements.txt
+  s_05b8c93581d21d::t_42dc58d1ab6f87 10-11,22-25
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.5",
+  "base_commit_sha": "1d1f650c023a86ccd150ecc782882a3d51c7edf9",
+  "prompts": {},
+  "sessions": {
+    "s_05b8c93581d21d": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f191e-05d6-7e03-ba7b-aafa554d1ccd",
+        "model": "gpt-5.4"
+      },
+      "human_author": "Theodoros Ploumis <me@theodorosploumis.com>"
+    }
+  }
+}
