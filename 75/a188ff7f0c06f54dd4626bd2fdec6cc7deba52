@@ -1,0 +1,21 @@
+VERSION
+  s_05b8c93581d21d::t_21193da4eb1e0e 1
+RELEASES.md
+  s_05b8c93581d21d::t_21193da4eb1e0e 7-15
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.5",
+  "base_commit_sha": "75a188ff7f0c06f54dd4626bd2fdec6cc7deba52",
+  "prompts": {},
+  "sessions": {
+    "s_05b8c93581d21d": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f191e-05d6-7e03-ba7b-aafa554d1ccd",
+        "model": "gpt-5.4"
+      },
+      "human_author": "Theodoros Ploumis <me@theodorosploumis.com>"
+    }
+  }
+}
