@@ -8,7 +8,7 @@ dynamic = ["version"]
 description = "Automated Drupal news aggregator with AI-powered summaries"
 readme = "README.md"
 requires-python = ">=3.10"
-license = {text = "GPL-2.0"}
+license = "GPL-2.0-only"
 authors = [
     {name = "Drupal News Contributors"},
 ]
@@ -25,7 +25,6 @@ classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
     "Intended Audience :: System Administrators",
-    "License :: OSI Approved :: GNU General Public License v2 (GPLv2)",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",
@@ -59,23 +58,18 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-# AI provider SDKs - install as needed
 openai = ["openai>=1.82"]
 anthropic = ["anthropic>=0.52"]
 google = ["google-genai>=1.0"]
 qwen = ["dashscope>=1.20"]
 grok = ["openai>=1.82"]
 deepseek = ["openai>=1.82"]
-
-# Install all AI providers
 all-providers = [
     "openai>=1.82",
     "anthropic>=0.52",
     "google-genai>=1.0",
     "dashscope>=1.20",
 ]
-
-# Development dependencies
 dev = [
     "pytest>=8.3",
     "pytest-cov>=4.1",
@@ -100,15 +94,16 @@ drupal-news-email = "drupal_news.cli:email_main"
 drupal-news-viewer = "drupal_news.cli:viewer_main"
 
 [tool.setuptools]
-packages = ["drupal_news", "drupal_news.utils", "drupal_news.utils.providers"]
-package-dir = {"drupal_news" = "src"}
+packages = ["drupal_news", "drupal_news.utils", "drupal_news.utils.providers", "drupal_news.static"]
+package-dir = {"drupal_news" = "src", "drupal_news.utils" = "src/utils", "drupal_news.utils.providers" = "src/utils/providers", "drupal_news.static" = "src/static"}
 include-package-data = true
 
 [tool.setuptools.dynamic]
 version = {file = "VERSION"}
 
 [tool.setuptools.package-data]
-drupal_news = ["*.yaml", "*.json", "static/**/*"]
+drupal_news = ["*.yaml", "*.yml", "*.json"]
+"drupal_news.static" = ["css/*.css", "scss/*.scss", "scss/*.md"]
 
 [tool.black]
 line-length = 100

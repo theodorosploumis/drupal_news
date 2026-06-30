@@ -442,14 +442,6 @@ def main():
         else:
             logger.info("email", "Email skipped")
 
-        # Verify integrity
-        logger.info("integrity", "Verifying run integrity...")
-        if verify_run_simple(run_dir):
-            logger.success("integrity", "Integrity check passed")
-        else:
-            logger.error("integrity", "Integrity check failed")
-            exit_code = EXIT_INTEGRITY_FAILED
-
         # Cleanup old data
         logger.info("cleanup", "Running cleanup...")
         cleanup_results = run_cleanup(
@@ -497,6 +489,15 @@ def main():
                 errors
             )
             logger.info("metrics", f"Metrics collected: {duration:.1f}s, {len(all_items)} items")
+
+            # Verify integrity after metrics are written.
+            if exit_code == EXIT_SUCCESS:
+                logger.info("integrity", "Verifying run integrity...")
+                if verify_run_simple(run_dir):
+                    logger.success("integrity", "Integrity check passed")
+                else:
+                    logger.error("integrity", "Integrity check failed")
+                    exit_code = EXIT_INTEGRITY_FAILED
         except Exception as e:
             logger.error("metrics", f"Failed to collect metrics: {e}")
 
