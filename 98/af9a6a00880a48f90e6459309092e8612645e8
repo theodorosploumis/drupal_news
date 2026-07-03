@@ -1,0 +1,23 @@
+VERSION
+  s_7c6c326f104d51::t_ec8f2c28a815ad 1
+src/index.py
+  s_7c6c326f104d51::t_84d9e489a6cf8d 156,176,238-239
+RELEASES.md
+  s_7c6c326f104d51::t_ec8f2c28a815ad 7-15
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.9",
+  "base_commit_sha": "98af9a6a00880a48f90e6459309092e8612645e8",
+  "prompts": {},
+  "sessions": {
+    "s_7c6c326f104d51": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f27a3-757a-7572-806f-4e4ed0bdc9d2",
+        "model": "gpt-5.4"
+      },
+      "human_author": "Theodoros Ploumis <me@theodorosploumis.com>"
+    }
+  }
+}
