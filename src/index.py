@@ -153,7 +153,7 @@ def main():
     parser = argparse.ArgumentParser(description="Drupal News Aggregator")
     parser.add_argument("--provider", default=None, help="AI provider (openai, anthropic, etc.)")
     parser.add_argument("--model", default=None, help="Model override")
-    parser.add_argument("--days", type=int, default=7, help="Timeframe in days")
+    parser.add_argument("--days", type=int, default=None, help="Timeframe in days (overrides config.yml)")
     parser.add_argument("--email", choices=["yes", "no"], default="yes", help="Send email")
     parser.add_argument("--dry-run", action="store_true", help="Skip AI and email (testing)")
     parser.add_argument("--use-sources", metavar="DATE", help="Use existing sources from DATE (YYYY-MM-DD), skip fetching")
@@ -173,7 +173,7 @@ def main():
 
     # Setup
     timezone = env["TIMEZONE"]
-    timeframe_days = args.days
+    timeframe_days = args.days if args.days is not None else config.get("timeframe_days", 7)
     since = days_ago(timeframe_days, timezone)
     run_date = now_in_tz(timezone).strftime("%Y-%m-%d")
     period_label = get_period_label(timeframe_days)
@@ -235,7 +235,8 @@ def main():
 
             # Extract metadata from cached sources
             metadata = sources_data.get("metadata", {})
-            timeframe_days = metadata.get("timeframe_days", args.days)
+            fallback_days = args.days if args.days is not None else config.get("timeframe_days", 7)
+            timeframe_days = metadata.get("timeframe_days", fallback_days)
             timezone = metadata.get("timezone", timezone)
             period_label = get_period_label(timeframe_days)
 

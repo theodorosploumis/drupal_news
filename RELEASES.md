@@ -4,6 +4,15 @@ All notable changes to Drupal News Aggregator will be documented here.
 
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.0.14] - 2026-07-03
+
+Config default fix for timeframe_days
+
+- Make core.timeframe_days from config.yml the default runtime value
+- Keep --days as an explicit override when passed on the CLI
+- Preserve cached-source metadata as the first source of truth for replayed runs
+
+
 ## [0.0.13] - 2026-07-03
 
 CLI version output fixes
