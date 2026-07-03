@@ -1,0 +1,35 @@
+src/cli.py
+  s_7c6c326f104d51::t_7b451202953157 7-8,12-14,21-23,30-32,40
+src/version.py
+  s_7c6c326f104d51::t_7b451202953157 1-20
+src/viewer.py
+  s_7c6c326f104d51::t_7b451202953157 15
+src/email_sender.py
+  s_7c6c326f104d51::t_853acd4171d89b 221
+  s_7c6c326f104d51::t_7b451202953157 11-12,220
+src/scheduler.py
+  s_7c6c326f104d51::t_7b451202953157 9
+  s_7c6c326f104d51::t_c131f44f128211 10
+RELEASES.md
+  s_7c6c326f104d51::t_1a0529f973b5a6 7-15
+src/index.py
+  s_7c6c326f104d51::t_7b451202953157 37
+VERSION
+  s_7c6c326f104d51::t_1a0529f973b5a6 1
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.9",
+  "base_commit_sha": "f5f71b130960f37648e972d97ab8b05aa6c17972",
+  "prompts": {},
+  "sessions": {
+    "s_7c6c326f104d51": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f27a3-757a-7572-806f-4e4ed0bdc9d2",
+        "model": "gpt-5.4"
+      },
+      "human_author": "Theodoros Ploumis <me@theodorosploumis.com>"
+    }
+  }
+}
