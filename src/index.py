@@ -34,6 +34,7 @@ from drupal_news.data_cleaner import run_cleanup
 from drupal_news.utils.consolidated_utils import days_ago, get_iso_timestamp, now_in_tz, get_period_label, dedupe_items, safe_write_json, safe_read_json, safe_read_yaml, ensure_dir
 from drupal_news.utils.md_config_parser import merge_sources_config
 from drupal_news.utils.config_loader import get_config, load_config as load_unified_config, load_providers_config as load_unified_providers
+from drupal_news.version import get_current_version
 
 
 # Exit codes
@@ -139,47 +140,6 @@ def load_env_vars(env_path: str = ".env", config: dict = None) -> dict:
         "CACHE_DB_PATH": os.getenv("CACHE_DB_PATH", "./cache/cache.db"),
         "CACHE_TTL_DAYS": int(os.getenv("CACHE_TTL_DAYS", 21)),
     }
-
-
-def get_current_version() -> str:
-    """
-    Get the current version from git tag.
-
-    Returns:
-        String with the current git tag version, or "unknown" if not available
-    """
-    try:
-        # Try to get the current git tag
-        result = subprocess.run(
-            ["git", "describe", "--tags", "--abbrev=0"],
-            capture_output=True,
-            text=True,
-            cwd=Path(__file__).parent.parent
-        )
-        if result.returncode == 0:
-            version = result.stdout.strip()
-            if version.startswith('v'):
-                return version[1:]  # Remove 'v' prefix if present
-            return version
-        else:
-            # Fallback to checking the latest tag
-            result = subprocess.run(
-                ["git", "tag", "--sort=-version:refname"],
-                capture_output=True,
-                text=True,
-                cwd=Path(__file__).parent.parent
-            )
-            if result.returncode == 0:
-                tags = result.stdout.strip().split('\n')
-                if tags and tags[0]:
-                    version = tags[0]
-                    if version.startswith('v'):
-                        return version[1:]  # Remove 'v' prefix if present
-                    return version
-    except Exception:
-        pass
-
-    return "unknown"
 
 
 def main():

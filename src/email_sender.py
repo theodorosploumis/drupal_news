@@ -8,6 +8,8 @@ from pathlib import Path
 from typing import Optional
 import os
 
+from drupal_news.version import get_current_version
+
 
 def send_email(
     smtp_host: str,
@@ -190,50 +192,6 @@ Body:
         f.write(log_content)
 
 
-def get_current_version() -> str:
-    """
-    Get the current version from git tag.
-
-    Returns:
-        String with the current git tag version, or "unknown" if not available
-    """
-    import subprocess
-    from pathlib import Path
-
-    try:
-        # Try to get the current git tag
-        result = subprocess.run(
-            ["git", "describe", "--tags", "--abbrev=0"],
-            capture_output=True,
-            text=True,
-            cwd=Path(__file__).parent
-        )
-        if result.returncode == 0:
-            version = result.stdout.strip()
-            if version.startswith('v'):
-                return version[1:]  # Remove 'v' prefix if present
-            return version
-        else:
-            # Fallback to checking the latest tag
-            result = subprocess.run(
-                ["git", "tag", "--sort=-version:refname"],
-                capture_output=True,
-                text=True,
-                cwd=Path(__file__).parent
-            )
-            if result.returncode == 0:
-                tags = result.stdout.strip().split('\n')
-                if tags and tags[0]:
-                    version = tags[0]
-                    if version.startswith('v'):
-                        return version[1:]  # Remove 'v' prefix if present
-                    return version
-    except Exception:
-        pass
-
-    return "unknown"
-
-
 def main():
     """Main entry point for drupal-news-email CLI."""
     import argparse
@@ -259,7 +217,8 @@ def main():
     # Load environment
     from dotenv import load_dotenv
     import os
-    
+
+
     env_path = Path.home() / ".drupal-news" / ".env"
     if not env_path.exists():
         env_path = Path(".env")

@@ -4,6 +4,15 @@ All notable changes to Drupal News Aggregator will be documented here.
 
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.0.13] - 2026-07-03
+
+CLI version output fixes
+
+- Add a shared package version helper for installed and local builds
+- Make drupal-news, drupal-news-scheduler, drupal-news-email, and drupal-news-viewer report the package version with --version
+- Stop relying on git tags for CLI version output in installed package contexts
+
+
 ## [0.0.12] - 2026-07-03
 
 PDF generation and email wrapper fixes
