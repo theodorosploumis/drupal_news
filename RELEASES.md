@@ -4,6 +4,16 @@ All notable changes to Drupal News Aggregator will be documented here.
 
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.0.12] - 2026-07-03
+
+PDF generation and email wrapper fixes
+
+- Replace WeasyPrint with ReportLab for PDF generation
+- Add graceful markdown fallback with PDF failure notice in summary.md
+- Fix the standalone send_email.py wrapper to use the current config and utility modules
+- Verify live email sends through both the package path and standalone wrapper
+
+
 ## [0.0.11] - 2026-06-30
 
 Packaging and integrity fixes

@@ -162,7 +162,7 @@ echo "Step 7: Verification"
 echo "======================================"
 echo "Testing basic imports..."
 
-if python3 -c "import sys; sys.path.insert(0, 'src'); from drupal_news.utils import timebox; from drupal_news import cache_manager; from drupal_news import validator; from drupal_news.utils.dedupe import dedupe_items; from drupal_news.pdf_generator import generate_summary_pdf; print('✓ All imports successful')" 2>/dev/null; then
+if python3 -c "import sys; sys.path.insert(0, 'src'); from drupal_news.utils import timebox; from drupal_news import cache_manager; from drupal_news import validator; from drupal_news.utils.dedupe import dedupe_items; from drupal_news.output_formatter import generate_summary_pdf; print('✓ All imports successful')" 2>/dev/null; then
     echo "✓ Core modules loaded successfully"
 else
     echo "⚠ Warning: Some modules failed to import (may need API keys)"

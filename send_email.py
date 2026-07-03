@@ -18,9 +18,9 @@ src_dir = Path(__file__).parent / "src"
 sys.path.insert(0, str(src_dir))
 
 from email_sender import send_report, write_email_log
-from utils.io_safe import safe_read_json
-from pdf_generator import generate_summary_pdf
-from utils.timebox import get_period_label
+from utils.config_loader import load_config
+from output_formatter import append_pdf_failure_notice, generate_summary_pdf
+from utils.consolidated_utils import get_period_label
 
 
 def find_latest_run(runs_root: Path) -> Path:
@@ -53,9 +53,10 @@ def main():
         print(f"Error: Config file not found: {args.config}")
         sys.exit(1)
 
-    config = safe_read_json(config_path)
-    if not config:
-        print(f"Error: Could not load config from {args.config}")
+    try:
+        config = load_config(args.config)
+    except Exception as exc:
+        print(f"Error: Could not load config from {args.config}: {exc}")
         sys.exit(1)
 
     # Get run directory
@@ -102,11 +103,12 @@ def main():
 
     if attachment_format == "pdf" and not pdf_path.exists():
         print(f"PDF not found, generating...")
-        pdf_path = generate_summary_pdf(run_dir, period_label=period_label)
+        pdf_path, pdf_error = generate_summary_pdf(run_dir, period_label=period_label)
         if pdf_path:
             print(f"✓ PDF generated: {pdf_path.name}")
         else:
-            print(f"✗ PDF generation failed, will send markdown instead")
+            append_pdf_failure_notice(summary_path, pdf_error or "Unknown PDF generation error")
+            print(f"✗ PDF generation failed, will send markdown instead: {pdf_error}")
 
     # Build env dict
     env = {

@@ -20,7 +20,12 @@ from drupal_news.cache_manager import CacheManager
 from drupal_news.process_logger import get_logger
 from drupal_news.content_reader import fetch_content
 from drupal_news.validator import validate_items, validate_summary
-from drupal_news.output_formatter import write_parsed_md, write_summary_md, generate_summary_pdf
+from drupal_news.output_formatter import (
+    append_pdf_failure_notice,
+    generate_summary_pdf,
+    write_parsed_md,
+    write_summary_md,
+)
 from drupal_news.ai_summarizer import summarize, summarize_with_fallback, generate_placeholder_summary
 from drupal_news.email_sender import send_report, write_email_log
 from drupal_news.metrics_collector import collect_metrics
@@ -404,11 +409,12 @@ def main():
 
         # Generate PDF
         logger.info("pdf", "Generating PDF...")
-        pdf_path = generate_summary_pdf(run_dir, period_label=period_label)
+        pdf_path, pdf_error = generate_summary_pdf(run_dir, period_label=period_label)
         if pdf_path:
             logger.info("pdf", f"PDF generated: {pdf_path.name}")
         else:
-            logger.warning("pdf", "PDF generation failed")
+            logger.warning("pdf", f"PDF generation failed: {pdf_error}")
+            append_pdf_failure_notice(run_dir / "summary.md", pdf_error or "Unknown PDF generation error")
 
         # Send email
         if args.email == "yes" and not args.dry_run:
