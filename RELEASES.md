@@ -4,6 +4,13 @@ All notable changes to Drupal News Aggregator will be documented here.
 
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.0.15] - 2026-07-16
+
+Cache stale-items fix
+
+- Re-filter cached RSS and web-page items against the current timeframe on cache-hit, so entries from prior runs no longer leak into later reports
+- Keep undated items, matching the fresh-fetch path semantics
+
 ## [0.0.14] - 2026-07-03
 
 Config default fix for timeframe_days
