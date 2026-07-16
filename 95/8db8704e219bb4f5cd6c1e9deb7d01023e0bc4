@@ -1,0 +1,20 @@
+src/content_reader.py
+  s_524ae343f4ad85::t_a746a34e696668 109-114
+  s_524ae343f4ad85::t_cb308535113006 210-214
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "958db8704e219bb4f5cd6c1e9deb7d01023e0bc4",
+  "prompts": {},
+  "sessions": {
+    "s_524ae343f4ad85": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f4efe314-d312-44aa-bd3d-0a3c2709b6ee",
+        "model": "glm-5.2"
+      },
+      "human_author": "Theodoros Ploumis <me@theodorosploumis.com>"
+    }
+  }
+}
