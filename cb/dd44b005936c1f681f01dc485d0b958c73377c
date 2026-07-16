@@ -1,0 +1,21 @@
+RELEASES.md
+  s_524ae343f4ad85::t_38cd70672dd7d7 7-13
+VERSION
+  s_524ae343f4ad85::t_b5fd50849a6d68 1
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "cbdd44b005936c1f681f01dc485d0b958c73377c",
+  "prompts": {},
+  "sessions": {
+    "s_524ae343f4ad85": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f4efe314-d312-44aa-bd3d-0a3c2709b6ee",
+        "model": "glm-5.2"
+      },
+      "human_author": "Theodoros Ploumis <me@theodorosploumis.com>"
+    }
+  }
+}
