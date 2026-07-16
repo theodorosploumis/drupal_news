@@ -106,7 +106,12 @@ def fetch_rss_feeds(
             if cache:
                 cached = cache.get(url)
                 if cached:
-                    items.extend(cached.get("items", []))
+                    # Re-filter cached items against the current window.
+                    # Cache entries can outlive the timeframe they were fetched in.
+                    for it in cached.get("items", []):
+                        d = parse_date(it.get("date", ""), timezone)
+                        if not d or is_within_timeframe(d, since, timezone):
+                            items.append(it)
                     continue
 
             # Fetch RSS feed
@@ -202,7 +207,11 @@ def fetch_web_pages(
             if cache:
                 cached = cache.get(url)
                 if cached:
-                    items.extend(cached.get("items", []))
+                    # Re-filter cached items against the current window.
+                    for it in cached.get("items", []):
+                        d = parse_date(it.get("date", ""), timezone)
+                        if not d or is_within_timeframe(d, since, timezone):
+                            items.append(it)
                     continue
 
             # Fetch page
